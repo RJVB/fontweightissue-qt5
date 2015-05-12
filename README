@@ -1,0 +1,6 @@
+This is a small utility to test Qt's handling of font weight and styles, and it's ability to restore the exact font that was selected.
+
+Two buttons allow to call up a font selection dialog: the upper button preselects the current font by handing the actual QFont to the font dialog. The lower button preselects using a clone of the current font, created from the family name, (integer) weight and the italic flag (a boolean). The upper button should always restore the correct font; the lower button should too, but is likely to fail for less common weights/styles or when the current locale isn't English.
+
+After selecting a font, the display is updated and the selection is saved in the application settings, either as a native QFont or else using the string representation that is also shown to the right of the upper button.
+This setting is read during application startup, which allows to test whether the selected font is restored correctly from a settings file.
