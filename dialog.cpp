@@ -158,6 +158,13 @@ Dialog::Dialog(QWidget *parent)
     connect(fontButton, SIGNAL(clicked()), this, SLOT(setFont()));
     connect(fontButton2, SIGNAL(clicked()), this, SLOT(setFontFromSpecs()));
 
+    fontPreview = new QLabel;
+    fontPreview->setFrameStyle(frameStyle);
+    fontPreview->setFont(font);
+    QFontDatabase db;
+    fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr("(") + font.styleName()
+        + tr(") @ ") + QString("%1pt").arg(font.pointSizeF()) );
+
     QGridLayout *layout = new QGridLayout;
     const QString doNotUseNativeDialog = tr("Do not use native dialog");
 
@@ -166,6 +173,7 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(fontLabel, 0, 1);
     layout->addWidget(fontButton2, 1, 0);
     layout->addWidget(fontLabel2, 1, 1);
+    layout->addWidget(fontPreview, 2, 0);
     fontDialogOptionsWidget = new DialogOptionsWidget;
     fontDialogOptionsWidget->addCheckBox(doNotUseNativeDialog, QFontDialog::DontUseNativeDialog);
     fontDialogOptionsWidget->addCheckBox(tr("No buttons") , QFontDialog::NoButtons);
@@ -176,7 +184,7 @@ Dialog::Dialog(QWidget *parent)
 #if 0
     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 #endif
-    layout->addWidget(fontDialogOptionsWidget, 2, 0, 1 ,2);
+    layout->addWidget(fontDialogOptionsWidget, 3, 0, 1 ,2);
     setLayout(layout);
 
     setWindowTitle(tr("Font Selection"));
@@ -216,6 +224,9 @@ void Dialog::setFont()
         fontLabel2->setText(fontRepr(font));
         fontLabel2->setFont(font);
         QFontDatabase db;
+        fontPreview->setFont(font);
+        fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr("(") + font.styleName()
+            + tr(") @ ") + QString("%1pt").arg(font.pointSizeF()) );
         qDebug() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
         QFont dum;
         dum.fromString(font.toString());
@@ -245,6 +256,9 @@ void Dialog::setFontFromSpecs()
         fontLabel->setFont(font2);
         font = font2;
         QFontDatabase db;
+        fontPreview->setFont(font);
+        fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr("(") + font.styleName()
+            + tr(") @ ") + QString("%1pt").arg(font.pointSizeF()) );
         qDebug() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
         QFont dum;
         dum.fromString(font.toString());

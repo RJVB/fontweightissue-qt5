@@ -64,7 +64,7 @@ private slots:
     void setFontStoreType();
 
 private:
-    QLabel *fontLabel, *fontLabel2;
+    QLabel *fontLabel, *fontLabel2, *fontPreview;
     QFont font;
     DialogOptionsWidget *fontDialogOptionsWidget;
     QCheckBox *fontStoreTypeSel;
