@@ -254,6 +254,7 @@ void Dialog::setFontFromSpecs()
         fontLabel2->setFont(font2);
         fontLabel->setText(font2.key());
         fontLabel->setFont(font2);
+	   qDebug() << "Selected font" << font2 << "which" << ((font == font2)? "is" : "is not") << "equal to the previous font" << font;
         font = font2;
         QFontDatabase db;
         fontPreview->setFont(font);
