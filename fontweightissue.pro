@@ -1,6 +1,6 @@
 QT += widgets core-private gui-private
 
-HEADERS       = dialog.h
+HEADERS       = dialog.h timing.c timing.h
 SOURCES       = dialog.cpp \
                 main.cpp
 

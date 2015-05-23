@@ -44,8 +44,91 @@
 #include <QLibraryInfo>
 #include <QSettings>
 #include <QDebug>
+#include <QString>
+#include <QStringList>
+#include <QSet>
+#include <QDebug>
 
 #include "dialog.h"
+
+class QFontStyleSet : public QSet<QString>
+{
+public:
+    inline QFontStyleSet()
+        : QSet<QString>()
+    { 
+        checkList.clear();
+    }
+    inline QFontStyleSet(const QFontStyleSet &ref)
+        : QSet<QString>(ref)
+    {
+        checkList = ref.checkList;
+    }
+    inline QFontStyleSet(const QSet<QString> &ref)
+        : QSet<QString>(ref)
+    {
+        checkList = toList();
+    }
+    static inline QFontStyleSet fromList(QStringList &list)
+    {
+        QFontStyleSet newSet(QSet<QString>::fromList(list));
+        newSet.checkList = list;
+        return newSet;
+    }
+    inline bool contains(const QString &stylePattern, bool exact) const
+    {
+//         lastCheckList = checkList;
+        if (exact) {
+            // QFontStyleSet should inherit contains(const QString &) so why
+            // do I have to call the parent class method explicitly here?
+            return QSet<QString>::contains(stylePattern);
+        } else {
+            foreach (const QString &pattern, checkList) {
+                if (stylePattern.contains(pattern)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    inline QFontStyleSet &operator<<(const QString &value)
+    {
+        insert(value);
+        checkList << value;
+        return *this;
+    }
+    inline QStringList list() const
+    {
+        return checkList;
+    }
+//     static inline QStringList lastList()
+//     {
+//         return lastCheckList;
+//     }
+private:
+    QStringList checkList;
+//     static QStringList lastCheckList;
+};
+
+static inline bool qstringCompareToList(const QString &style, const QStringList &checkList, bool exact, Qt::CaseSensitivity mode = Qt::CaseInsensitive)
+{
+    if (exact) {
+        foreach (const QString &pattern, checkList) {
+            if (style.compare(pattern, mode) == 0) {
+                return true;
+            }
+        }
+    } else {
+        foreach (const QString &pattern, checkList) {
+            if (style.contains(pattern, mode)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+#include "timing.c"
 
 int main(int argc, char *argv[])
 {
@@ -58,6 +141,48 @@ int main(int argc, char *argv[])
     if (translator->load(translatorFileName, QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
         app.installTranslator(translator);
 #endif
+    QFontStyleSet demiBoldStyles;
+    demiBoldStyles << QCoreApplication::translate("QFontDatabase", "DemiBold").toLower()
+                << QCoreApplication::translate("QFontDatabase", "Demi Bold").toLower()
+                << QCoreApplication::translate("QFontDatabase", "SemiBold").toLower()
+                << QCoreApplication::translate("QFontDatabase", "Semi Bold").toLower();
+    QFontStyleSet blackStyles;
+    blackStyles << QCoreApplication::translate("QFontDatabase", "Black").toLower()
+                << QCoreApplication::translate("QFontDatabase", "Ultra").toLower()
+                << QCoreApplication::translate("QFontDatabase", "Heavy").toLower()
+                << QCoreApplication::translate("QFontDatabase", "UltraBold").toLower();
+    QStringList blackStyleList = blackStyles.list();
+    QString pattern = "black", compareTo = "heavy";
+//     qDebug() << "pattern=" << pattern << "matches compareTo=" << compareTo
+//         << " in list" << blackStyles << "(" << blackStyleList << "):";
+//     qDebug() << "qstringCompareToList:" << qstringCompareToList(pattern, blackStyles.list(), true) << " vs "
+//         << qstringCompareToList(compareTo, blackStyles.list(), true);
+//     qDebug() << "QFontStyleSet:" << blackStyles.contains(pattern, false) << " vs "
+//         << blackStyles.contains(compareTo, true);
+    const int N = 1000000;
+    init_HRTime();
+    bool found = true, exact = true;
+    HRTime_tic();
+    for( int i = 0 ; i < N && found; ++i ){
+        pattern = blackStyleList[i % blackStyleList.size()];
+    }
+    double overhead = HRTime_toc();
+    for( int j = 0 ; j < 2 ; ++j ){
+        HRTime_tic();
+        for( int i = 0 ; i < N && found; ++i ){
+            pattern = blackStyleList[i % blackStyleList.size()];
+            found =  qstringCompareToList(pattern, blackStyleList, exact) && qstringCompareToList(compareTo, blackStyleList, exact);
+        }
+        qDebug() << N << " times qstringCompareToList in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
+        HRTime_tic();
+        for( int i = 0 ; i < N && found; ++i ){
+            pattern = blackStyleList[i % blackStyleList.size()];
+            found = blackStyles.contains(pattern, exact) && blackStyles.contains(compareTo, exact);
+        }
+        qDebug() << N << " times QFontStyleSet::contains in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
+
+        exact = false;
+    }
 
     // to match the default Info.plist that qmake creates:
     app.setOrganizationName("yourcompany");
