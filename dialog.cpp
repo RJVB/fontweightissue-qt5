@@ -165,6 +165,11 @@ Dialog::Dialog(QWidget *parent)
     fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr("(") + font.styleName()
         + tr(") @ ") + QString("%1pt").arg(font.pointSizeF()) );
 
+    QPushButton *famButton = new QPushButton(tr("Lookup from Family"));
+    fontFamilyPreview = new QLabel;
+    fontFamilyPreview->setFrameStyle(frameStyle);
+    connect(famButton, SIGNAL(clicked()), this, SLOT(getFontFromFamily()));
+
     QGridLayout *layout = new QGridLayout;
     const QString doNotUseNativeDialog = tr("Do not use native dialog");
 
@@ -174,6 +179,8 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(fontButton2, 1, 0);
     layout->addWidget(fontLabel2, 1, 1);
     layout->addWidget(fontPreview, 2, 0);
+    layout->addWidget(famButton, 3, 0);
+    layout->addWidget(fontFamilyPreview, 3, 1);
     fontDialogOptionsWidget = new DialogOptionsWidget;
     fontDialogOptionsWidget->addCheckBox(doNotUseNativeDialog, QFontDialog::DontUseNativeDialog);
     fontDialogOptionsWidget->addCheckBox(tr("No buttons") , QFontDialog::NoButtons);
@@ -184,7 +191,7 @@ Dialog::Dialog(QWidget *parent)
 #if 0
     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 #endif
-    layout->addWidget(fontDialogOptionsWidget, 3, 0, 1 ,2);
+    layout->addWidget(fontDialogOptionsWidget, 4, 0, 1 ,2);
     setLayout(layout);
 
     setWindowTitle(tr("Font Selection"));
@@ -300,4 +307,19 @@ void Dialog::setFontStoreType()
     store.sync();
     qDebug() << "Font QSetting" << store.allKeys() << "status:" << store.status();
     qDebug() << "settings(\"font\")=" << store.value("font") << "canConvert<QFont>:" << store.value("font").canConvert<QFont>();
+}
+
+void Dialog::getFontFromFamily()
+{
+    bool ok;
+    QString text = QInputDialog::getText(this, tr("QFont::family()"),
+                                         tr("Font Family:"), QLineEdit::Normal,
+                                         famFont.family(), &ok);
+    if (ok && !text.isEmpty()) {
+        qDebug() << "Substitutes for" << text << ":" << QFont::substitutes(text);
+        famFont.setFamily(text);
+        fontFamilyPreview->setFont(famFont);
+        fontFamilyPreview->setText(text + QLatin1String(" -> ") + famFont.toString()
+            + QLatin1String(" = ") + QFontInfo(famFont).family());
+    }
 }
