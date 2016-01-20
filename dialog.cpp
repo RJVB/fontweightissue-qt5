@@ -189,11 +189,11 @@ Dialog::Dialog(QWidget *parent)
 
     setWindowTitle(tr("Font Selection"));
 #if QT_VERSION >= QT_VERSION_CHECK(5,5,0)
-    qDebug() << "For reference: qt_extralightFontWeight=" << QFont::ExtraLight
-             << "qt_thinFontWeight=" << QFont::Thin
+    qDebug() << "For reference: QFont::ExtraLight=" << QFont::ExtraLight
+             << "QFont::Thin=" << QFont::Thin
              << "QFont::Light=" << QFont::Light
              << "QFont::Normal=" << QFont::Normal
-             << "qt_mediumFontWeight" << QFont::Medium
+             << "QFont::Medium" << QFont::Medium
              << "QFont::DemiBold=" << QFont::DemiBold
              << "QFont::Bold=" << QFont::Bold
              << "QFont::Black=" << QFont::Black;
