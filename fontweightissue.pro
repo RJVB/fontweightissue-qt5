@@ -1,4 +1,7 @@
 QT += widgets core-private gui-private
+CONFIG += release
+QMAKE_CXXFLAGS_RELEASE -= -pipe -O2
+QMAKE_CXXFLAGS_RELEASE += -g -O3 -march=native
 
 HEADERS       = dialog.h timing.c timing.h
 SOURCES       = dialog.cpp \
