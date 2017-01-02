@@ -387,6 +387,7 @@ void Dialog::getFontFromFamily()
             + QLatin1String(" = ") + QFontInfo(famFont).family());
     }
 }
+
 const char *qFontToString(QFont *qfont)
 {
     return qfont->toString().toLatin1().data();
