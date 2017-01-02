@@ -42,6 +42,7 @@
 #define DIALOG_H
 
 #include <QWidget>
+#include <QMap>
 
 QT_BEGIN_NAMESPACE
 class QCheckBox;
@@ -50,6 +51,7 @@ class QErrorMessage;
 QT_END_NAMESPACE
 
 class DialogOptionsWidget;
+class QTextStream;
 
 class Dialog : public QWidget
 {
@@ -70,6 +72,11 @@ private:
     DialogOptionsWidget *fontDialogOptionsWidget;
     QCheckBox *fontStoreTypeSel;
     bool storeNativeQFont;
+    QMap<QFont::Style, QString> styleString;
+    QMap<QFont::StyleHint, QString> styleHintString;
+    void fontDetails(QFont &font, QTextStream &sink);
+    QString fontDetails(QFont &font);
+    void fontDetails(QFont &font, FILE *fp);
 };
 
 #endif

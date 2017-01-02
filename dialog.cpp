@@ -126,17 +126,17 @@ Dialog::Dialog(QWidget *parent)
         if (storeNativeQFont) {
             if (prefFont.canConvert<QFont>()) {
                 font = prefFont.value<QFont>();
-                qDebug() << "Restoring saved font" << font;
+                qWarning() << "Restoring saved font" << font;
                 fontLabel->setFont(font);
             }
             else {
-                qDebug() << "Cannot restore font from" << prefFont;
+                qWarning() << "Cannot restore font from" << prefFont;
             }
         }
         else {
             QFont fn;
             if (!fn.fromString(prefFont.toString())) {
-                qDebug() << "Failed to restore font from" << prefFont << "toString=" << prefFont.toString();
+                qWarning() << "Failed to restore font from" << prefFont << "toString=" << prefFont.toString();
             }
             else {
                 font = fn;
@@ -196,7 +196,7 @@ Dialog::Dialog(QWidget *parent)
 
     setWindowTitle(tr("Font Selection"));
 #if QT_VERSION >= QT_VERSION_CHECK(5,5,0)
-    qDebug() << "For reference: QFont::ExtraLight=" << QFont::ExtraLight
+    qWarning() << "For reference: QFont::ExtraLight=" << QFont::ExtraLight
              << "QFont::Thin=" << QFont::Thin
              << "QFont::Light=" << QFont::Light
              << "QFont::Normal=" << QFont::Normal
@@ -205,7 +205,7 @@ Dialog::Dialog(QWidget *parent)
              << "QFont::Bold=" << QFont::Bold
              << "QFont::Black=" << QFont::Black;
 #elif QT_VERSION >= QT_VERSION_CHECK(5,4,0)
-    qDebug() << "For reference: qt_extralightFontWeight=" << qt_extralightFontWeight
+    qWarning() << "For reference: qt_extralightFontWeight=" << qt_extralightFontWeight
              << "qt_thinFontWeight=" << qt_thinFontWeight
              << "QFont::Light=" << QFont::Light
              << "QFont::Normal=" << QFont::Normal
@@ -214,12 +214,65 @@ Dialog::Dialog(QWidget *parent)
              << "QFont::Bold=" << QFont::Bold
              << "QFont::Black=" << QFont::Black;
 #else
-    qDebug() << "For reference: QFont::Light=" << QFont::Light
+    qWarning() << "For reference: QFont::Light=" << QFont::Light
              << "QFont::Normal=" << QFont::Normal
              << "QFont::DemiBold=" << QFont::DemiBold
              << "QFont::Bold=" << QFont::Bold
              << "QFont::Black=" << QFont::Black;
 #endif
+    styleString[QFont::StyleNormal] = "normal";
+    styleString[QFont::StyleItalic] = "italic";
+    styleString[QFont::StyleOblique] = "oblique";
+    styleHintString[QFont::Helvetica] = "Helvetica";
+    styleHintString[QFont::SansSerif] = "SansSerif (Helvetica)";
+    styleHintString[QFont::Times] = "Times";
+    styleHintString[QFont::Serif] = "Serif (Times)";
+    styleHintString[QFont::Courier] = "Courier";
+    styleHintString[QFont::TypeWriter] = "TypeWriter (Courier)";
+    styleHintString[QFont::OldEnglish] = "OldEnglish";
+    styleHintString[QFont::Decorative] = "Decorative (OldEnglish)";
+    styleHintString[QFont::System] = "System";
+    styleHintString[QFont::AnyStyle] = "AnyStyle";
+    styleHintString[QFont::Cursive] = "Cursive";
+    styleHintString[QFont::Monospace] = "Monospace";
+    styleHintString[QFont::Fantasy] = "Fantasy";
+}
+
+// QFontInfo for Monaco,9,-1,5,0,0,0,0,0,0 :
+//     family Monaco Regular/normal 9.2093pt; weight 0
+//     styleHint: AnyStyle, fixed pitch
+// QFontMetrics:
+//     ascent, descent: 9,3; average width=7
+//     height, x-height, max.width: 12,6,7; natural line spacing: 0
+
+void Dialog::fontDetails(QFont &font, QTextStream &sink)
+{
+    QFontInfo fi(font);
+    sink << "QFontInfo for " << font.toString() << (fi.exactMatch()? " (exact match):" : " :") << '\n' << flush;
+    sink << "\tfamily " << fi.family() << " " << fi.styleName() << "/" << styleString[fi.style()]
+        << (fi.bold()? " bold " : " ")
+        << fi.pointSizeF() << "pt; weight " << fi.weight() << '\n' << flush;
+    sink << "\tstyleHint: " << styleHintString[fi.styleHint()] << (fi.fixedPitch()? ", fixed pitch" : "") << '\n' << flush;
+    QFontMetrics fm(font);
+    sink << "QFontMetrics:" << '\n' << flush;
+    sink << "\tascent, descent: " << fm.ascent() << "," << fm.descent()
+        << "; average width=" << fm.averageCharWidth() << '\n' << flush;
+    sink << "\theight, x-height, max.width: " << fm.height() << "," << fm.xHeight() << "," << fm.maxWidth()
+        << "; natural line spacing: " << fm.leading() << '\n' << flush;
+}
+
+QString Dialog::fontDetails(QFont &font)
+{
+    QString details;
+    QTextStream sink(&details);
+    fontDetails(font, sink);
+    return details;
+}
+
+void Dialog::fontDetails(QFont &font, FILE *fp)
+{
+    QTextStream sink(fp);
+    fontDetails(font, sink);
 }
 
 void Dialog::setFont()
@@ -232,7 +285,7 @@ void Dialog::setFont()
 //         fontLabel->setFont(font);
 //     }
     bool ok;
-    qDebug() << "Preselecting font=" << font;
+    qWarning() << "Preselecting font=" << font;
     font = QFontDialog::getFont(&ok, font, this, "Select Font", options);
     if (ok) {
         fontLabel->setText(font.key());
@@ -243,10 +296,11 @@ void Dialog::setFont()
         fontPreview->setFont(font);
         fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr("(") + font.styleName()
             + tr(") @ ") + QString("%1pt").arg(font.pointSizeF()) );
-        qDebug() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
+        qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
         QFont dum;
         dum.fromString(font.toString());
-        qDebug() << "QFont::fromString(" << font.toString() << ")" << dum;
+        qWarning() << "QFont::fromString(" << font.toString() << ")" << dum;
+        fontDetails(font, stdout);
         if (storeNativeQFont) {
             QSettings().setValue("font", font);
         }
@@ -260,26 +314,27 @@ void Dialog::setFontFromSpecs()
 {
     const QFontDialog::FontDialogOptions options = QFlag(fontDialogOptionsWidget->value());
     bool ok;
-    qDebug() << "Preselecting font.key=" << fontLabel2->text() << "(font=" << font << ")";
+    qWarning() << "Preselecting font.key=" << fontLabel2->text() << "(font=" << font << ")";
     QFont font2 = QFont(font.family(), font.pointSize(), font.weight(), font.italic());
-    qDebug() << "QFont:family=" << font.family() << "weight=" << font.weight() << font.styleName() << "italic=" << font.italic() << "=" << font2;
-    qDebug() << "Preselecting font.key=" << fontLabel2->text() << "(font=" << font << "=>" << font2 << ")";
+    qWarning() << "QFont:family=" << font.family() << "weight=" << font.weight() << font.styleName() << "italic=" << font.italic() << "=" << font2;
+    qWarning() << "Preselecting font.key=" << fontLabel2->text() << "(font=" << font << "=>" << font2 << ")";
     font2 = QFontDialog::getFont(&ok, font2, this, "Select Font", options);
     if (ok) {
         fontLabel2->setText(fontRepr(font2));
         fontLabel2->setFont(font2);
         fontLabel->setText(font2.key());
         fontLabel->setFont(font2);
-	   qDebug() << "Selected font" << font2 << "which" << ((font == font2)? "is" : "is not") << "equal to the previous font" << font;
+	   qWarning() << "Selected font" << font2 << "which" << ((font == font2)? "is" : "is not") << "equal to the previous font" << font;
         font = font2;
         QFontDatabase db;
         fontPreview->setFont(font);
         fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr("(") + font.styleName()
             + tr(") @ ") + QString("%1pt").arg(font.pointSizeF()) );
-        qDebug() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
+        qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
         QFont dum;
         dum.fromString(font.toString());
-        qDebug() << "QFont::fromString(" << font.toString() << ")" << dum;
+        qWarning() << "QFont::fromString(" << font.toString() << ")" << dum;
+        fontDetails(font, stdout);
         QSettings store;
         if (storeNativeQFont) {
             store.setValue("font", font);
@@ -288,8 +343,8 @@ void Dialog::setFontFromSpecs()
             store.setValue("font", font.toString());
         }
 //         store.sync();
-//         qDebug() << "Font QSetting" << store.allKeys() << "status:" << store.status();
-//         qDebug() << "settings(\"font\")=" << store.value("font") << "canConvert<QFont>:" << store.value("font").canConvert<QFont>();
+//         qWarning() << "Font QSetting" << store.allKeys() << "status:" << store.status();
+//         qWarning() << "settings(\"font\")=" << store.value("font") << "canConvert<QFont>:" << store.value("font").canConvert<QFont>();
     }
 }
 
@@ -305,8 +360,8 @@ void Dialog::setFontStoreType()
         store.setValue("font", font.toString());
     }
     store.sync();
-    qDebug() << "Font QSetting" << store.allKeys() << "status:" << store.status();
-    qDebug() << "settings(\"font\")=" << store.value("font") << "canConvert<QFont>:" << store.value("font").canConvert<QFont>();
+    qWarning() << "Font QSetting" << store.allKeys() << "status:" << store.status();
+    qWarning() << "settings(\"font\")=" << store.value("font") << "canConvert<QFont>:" << store.value("font").canConvert<QFont>();
 }
 
 void Dialog::getFontFromFamily()
@@ -316,7 +371,7 @@ void Dialog::getFontFromFamily()
                                          tr("Font Family:"), QLineEdit::Normal,
                                          famFont.family(), &ok);
     if (ok && !text.isEmpty()) {
-        qDebug() << "Substitutes for" << text << ":" << QFont::substitutes(text);
+        qWarning() << "Substitutes for" << text << ":" << QFont::substitutes(text);
         famFont.setFamily(text);
         fontFamilyPreview->setFont(famFont);
         fontFamilyPreview->setText(text + QLatin1String(" -> ") + famFont.toString()
