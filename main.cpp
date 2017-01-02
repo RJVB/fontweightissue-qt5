@@ -133,6 +133,7 @@ static inline bool qstringCompareToList(const QString &style, const QStringList 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+    QSettings::setDefaultFormat(QSettings::IniFormat);
 
 #ifndef QT_NO_TRANSLATION
     QString translatorFileName = QLatin1String("qt_");
