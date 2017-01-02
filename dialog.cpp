@@ -238,12 +238,19 @@ Dialog::Dialog(QWidget *parent)
     styleHintString[QFont::Fantasy] = "Fantasy";
 }
 
+// Linux/X11:
 // QFontInfo for Monaco,9,-1,5,0,0,0,0,0,0 :
 //     family Monaco Regular/normal 9.2093pt; weight 0
 //     styleHint: AnyStyle, fixed pitch
 // QFontMetrics:
 //     ascent, descent: 9,3; average width=7
 //     height, x-height, max.width: 12,6,7; natural line spacing: 0
+// QFontInfo for Segoe UI,10,-1,5,63,0,0,0,0,0 :
+//         family Segoe UI Semibold/normal bold 10.0465pt; weight 63
+//         styleHint: AnyStyle
+// QFontMetrics:
+//         ascent, descent: 13,3; average width=7
+//         height, x-height, max.width: 16,6,17; natural line spacing: 0
 
 void Dialog::fontDetails(QFont &font, QTextStream &sink)
 {
