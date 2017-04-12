@@ -254,6 +254,54 @@ Dialog::Dialog(QWidget *parent)
 //         ascent, descent: 13,3; average width=7
 //         height, x-height, max.width: 16,6,17; natural line spacing: 0
 
+// Mac OS X/cocoa/CoreText
+// QFontInfo for Monaco,9,-1,5,50,0,0,0,0,0 (exact match):
+//         family Monaco Regular/normal 9pt; weight 50
+//         styleHint: AnyStyle, fixed pitch
+// QFontMetrics:
+//         ascent, descent: 9,2; average width=5
+//         height, x-height, max.width: 11,5,5; natural line spacing: 1
+// QFontInfo for Segoe UI,10,-1,5,63,0,0,0,0,0 (exact match):
+//         family Segoe UI Semibold/normal bold 10pt; weight 63
+//         styleHint: AnyStyle
+// QFontMetrics:
+//         ascent, descent: 11,3; average width=6
+//         height, x-height, max.width: 14,5,10; natural line spacing: 0
+
+// Mac OS X/cocoa/freetype
+// QFontInfo for Monaco,9,-1,5,50,0,0,0,0,0 (exact match):
+//         family Monaco Regular/normal 9pt; weight 50
+//         styleHint: AnyStyle, fixed pitch
+// QFontMetrics:
+//         ascent, descent: 9,3; average width=5
+//         height, x-height, max.width: 12,5,5; natural line spacing: 0
+// QFontInfo for Segoe UI,10,-1,5,63,0,0,0,0,0 (exact match):
+//         family Segoe UI Semibold/normal bold 10pt; weight 63
+//         styleHint: AnyStyle
+// QFontMetrics:
+//         ascent, descent: 11,3; average width=6
+//         height, x-height, max.width: 14,5,14; natural line spacing: -1
+
+// Mac OS X/xcb
+// QFontInfo for Monaco [PfEd],9,-1,5,0,0,0,0,0,0 (exact match):
+//         family Monaco [PfEd] Regular/normal 9pt; weight 0
+//         styleHint: AnyStyle, fixed pitch
+// QFontMetrics:
+//         ascent, descent: 8,2; average width=5
+//         height, x-height, max.width: 10,5,5; natural line spacing: 0
+// QFontInfo for Monaco [unknown],9,-1,5,50,0,0,0,0,0 (exact match):
+//         family Monaco [unknown] Regular/normal 9pt; weight 50
+//         styleHint: AnyStyle, fixed pitch
+// QFontMetrics:
+//         ascent, descent: 9,3; average width=5
+//         height, x-height, max.width: 12,5,5; natural line spacing: 0
+// QFontInfo for Segoe UI,10,-1,5,63,0,0,0,0,0 (exact match):
+//         family Segoe UI Semibold/normal bold 10pt; weight 63
+//         styleHint: AnyStyle
+// QFontMetrics:
+//         ascent, descent: 11,3; average width=6
+//         height, x-height, max.width: 14,5,14; natural line spacing: -1
+
 void Dialog::fontDetails(QFont &font, QTextStream &sink)
 {
     QFontInfo fi(font);
