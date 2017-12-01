@@ -129,8 +129,8 @@ Dialog::Dialog(QWidget *parent)
         if (storeNativeQFont) {
             if (prefFont.canConvert<QFont>()) {
                 font = prefFont.value<QFont>();
-                qWarning() << "Restoring saved font" << font;
-                fontLabel->setFont(font);
+                qWarning() << "Restoring saved native font" << font;
+                fontDetails(font, stdout);
             }
             else {
                 qWarning() << "Cannot restore font from" << prefFont;
@@ -142,6 +142,8 @@ Dialog::Dialog(QWidget *parent)
                 qWarning() << "Failed to restore font from" << prefFont << "toString=" << prefFont.toString();
             }
             else {
+                qWarning() << "Restoring saved font" << fn;
+                fontDetails(fn, stdout);
                 font = fn;
             }
         }
@@ -362,6 +364,7 @@ void Dialog::setFont()
         fontPreview->setFont(font);
         fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
         qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
+        qWarning() << "font.key():" << font.key();
         QFont dum;
         dum.fromString(font.toString());
         qWarning() << "QFont::fromString(" << font.toString() << ")" << dum;
@@ -397,6 +400,7 @@ void Dialog::setFontFromSpecs()
         fontPreview->setFont(font);
         fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
         qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
+        qWarning() << "font.key():" << font.key();
         QFont dum;
         dum.fromString(font.toString());
         qWarning() << "QFont::fromString(" << font.toString() << ")" << dum;
