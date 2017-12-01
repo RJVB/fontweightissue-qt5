@@ -67,7 +67,7 @@ private slots:
     void getFontFromFamily();
 
 private:
-    QLabel *fontLabel, *fontLabel2, *fontPreview, *fontFamilyPreview;
+    QLabel *fontLabel, *fontLabel2, *fontPreview, *fontFamilyPreview, *fontStyleName;
     QFont font, famFont;
     DialogOptionsWidget *fontDialogOptionsWidget;
     QCheckBox *fontStoreTypeSel;

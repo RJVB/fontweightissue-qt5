@@ -123,6 +123,7 @@ Dialog::Dialog(QWidget *parent)
     QVariant prefFont = store.value("font");
     fontLabel = new QLabel;
     fontLabel->setFrameStyle(frameStyle);
+    fontLabel->setToolTip(tr("this shows what QFont::key() returns for the current font"));
     font = fontLabel->font();
     if (prefFont != QVariant()) {
         if (storeNativeQFont) {
@@ -152,6 +153,7 @@ Dialog::Dialog(QWidget *parent)
 
     fontLabel2 = new QLabel;
     fontLabel2->setFrameStyle(frameStyle);
+    fontLabel2->setToolTip(tr("this shows the current font's common attributes"));
     fontLabel2->setFont(font);
     fontLabel2->setText(fontRepr(font));
     QPushButton *fontButton2 = new QPushButton(tr("QFontDialog::getFont(font.key())"));
@@ -162,15 +164,19 @@ Dialog::Dialog(QWidget *parent)
 
     fontPreview = new QLabel;
     fontPreview->setFrameStyle(frameStyle);
+    fontPreview->setToolTip(tr("this shows current font family, QFont::styleString() and decimal point size"));
     fontPreview->setFont(font);
     QFontDatabase db;
-    fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr("(") + font.styleName()
-        + tr(") @ ") + QString("%1pt").arg(font.pointSizeF()) );
+    fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
 
     QPushButton *famButton = new QPushButton(tr("Lookup from Family"));
     fontFamilyPreview = new QLabel;
     fontFamilyPreview->setFrameStyle(frameStyle);
     connect(famButton, SIGNAL(clicked()), this, SLOT(getFontFromFamily()));
+
+    fontStyleName = new QLabel;
+    fontStyleName->setFrameStyle(frameStyle);
+    fontStyleName->setToolTip(tr("this shows the current styleName attribute that has been set on the font"));
 
     QGridLayout *layout = new QGridLayout;
     const QString doNotUseNativeDialog = tr("Do not use native dialog");
@@ -181,6 +187,7 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(fontButton2, 1, 0);
     layout->addWidget(fontLabel2, 1, 1);
     layout->addWidget(fontPreview, 2, 0);
+    layout->addWidget(fontStyleName, 2, 1);
     layout->addWidget(famButton, 3, 0);
     layout->addWidget(fontFamilyPreview, 3, 1);
     fontDialogOptionsWidget = new DialogOptionsWidget;
@@ -349,10 +356,11 @@ void Dialog::setFont()
         fontLabel->setFont(font);
         fontLabel2->setText(fontRepr(font));
         fontLabel2->setFont(font);
+        fontStyleName->setText(font.styleName());
+        fontStyleName->setFont(font);
         QFontDatabase db;
         fontPreview->setFont(font);
-        fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr("(") + font.styleName()
-            + tr(") @ ") + QString("%1pt").arg(font.pointSizeF()) );
+        fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
         qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
         QFont dum;
         dum.fromString(font.toString());
@@ -381,12 +389,13 @@ void Dialog::setFontFromSpecs()
         fontLabel2->setFont(font2);
         fontLabel->setText(font2.key());
         fontLabel->setFont(font2);
+        fontStyleName->setText(font2.styleName());
+        fontStyleName->setFont(font2);
         qWarning() << "Selected font" << font2 << "which" << ((font == font2)? "is" : "is not") << "equal to the previous font" << font;
         font = font2;
         QFontDatabase db;
         fontPreview->setFont(font);
-        fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr("(") + font.styleName()
-            + tr(") @ ") + QString("%1pt").arg(font.pointSizeF()) );
+        fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
         qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
         QFont dum;
         dum.fromString(font.toString());
