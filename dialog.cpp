@@ -235,19 +235,25 @@ Dialog::Dialog(QWidget *parent)
     QFontDatabase db;
     fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
 
-    clonedLabel = new QLabel;
-    clonedLabel->setFrameStyle(frameStyle);
-    clonedLabel->setToolTip(tr("this shows the font cloned without styleName"));
-    clonedBoldLabel = new QLabel;
-    clonedBoldLabel->setFrameStyle(frameStyle);
-    clonedBoldLabel->setToolTip(tr("this shows the font cloned without styleName and made bold"));
+    clonedFontPreview = new QLabel;
+    clonedFontPreview->setFrameStyle(frameStyle);
+    clonedFontPreview->setToolTip(tr("this shows the font cloned without styleName"));
+    clonedBoldFontPreview = new QLabel;
+    clonedBoldFontPreview->setFrameStyle(frameStyle);
+    clonedBoldFontPreview->setToolTip(tr("this shows the font cloned without styleName and made bold"));
     {   QFont tmp = stripStyleName(font);
-        clonedLabel->setFont(tmp);
+        clonedFontPreview->setFont(tmp);
         tmp.setBold(true);
-        clonedBoldLabel->setFont(tmp);
+        clonedBoldFontPreview->setFont(tmp);
     }
-    clonedLabel->setText(clonedLabel->font().key());
-    clonedBoldLabel->setText(clonedBoldLabel->font().key());
+    clonedFontPreview->setText(clonedFontPreview->font().key());
+    clonedBoldFontPreview->setText(clonedBoldFontPreview->font().key());
+
+    QPushButton *styleButton = new QPushButton(tr("set styleName"));
+    styledFontPreview = new QLabel;
+    styledFontPreview->setFrameStyle(frameStyle);
+    styledFontPreview->setToolTip(tr("this shows the result of setting a stylename on the selected font"));
+    connect(styleButton, SIGNAL(clicked()), this, SLOT(setFontStyleName()));
 
     QPushButton *famButton = new QPushButton(tr("Lookup from Family"));
     fontFamilyPreview = new QLabel;
@@ -268,10 +274,12 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(fontLabel2, 1, 1);
     layout->addWidget(fontPreview, 2, 0);
     layout->addWidget(fontStyleName, 2, 1);
-    layout->addWidget(clonedLabel, 3, 0);
-    layout->addWidget(clonedBoldLabel, 3, 1);
-    layout->addWidget(famButton, 4, 0);
-    layout->addWidget(fontFamilyPreview, 4, 1);
+    layout->addWidget(clonedFontPreview, 3, 0);
+    layout->addWidget(clonedBoldFontPreview, 3, 1);
+    layout->addWidget(styleButton, 4, 0);
+    layout->addWidget(styledFontPreview, 4, 1);
+    layout->addWidget(famButton, 5, 0);
+    layout->addWidget(fontFamilyPreview, 5, 1);
 
     fontDialogOptionsWidget = new DialogOptionsWidget;
     fontDialogOptionsWidget->addCheckBox(doNotUseNativeDialog, QFontDialog::DontUseNativeDialog);
@@ -283,7 +291,7 @@ Dialog::Dialog(QWidget *parent)
 #if 0
     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 #endif
-    layout->addWidget(fontDialogOptionsWidget, 5, 0, 1 ,2);
+    layout->addWidget(fontDialogOptionsWidget, 6, 0, 1 ,2);
     setLayout(layout);
 
     setWindowTitle(tr("Font Selection"));
@@ -424,6 +432,41 @@ void Dialog::fontDetails(QFont &font, FILE *fp)
     fontDetails(font, sink);
 }
 
+void Dialog::setFont(QFont &fnt)
+{
+    font = fnt;
+    fontLabel->setText(font.key());
+    fontLabel->setFont(font);
+    fontLabel2->setText(fontRepr(font));
+    fontLabel2->setFont(font);
+    fontStyleName->setText(font.styleName());
+    fontStyleName->setFont(font);
+    QFontDatabase db;
+    fontPreview->setFont(font);
+    fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
+
+    {   QFont tmp = stripStyleName(font);
+        clonedFontPreview->setFont(tmp);
+        tmp.setBold(true);
+        clonedBoldFontPreview->setFont(tmp);
+    }
+    clonedFontPreview->setText(clonedFontPreview->font().key());
+    clonedBoldFontPreview->setText(clonedBoldFontPreview->font().key());
+
+    qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
+    qWarning() << "font.key():" << font.key();
+    QFont dum;
+    dum.fromString(font.toString());
+    qWarning() << "QFont::fromString(" << font.toString() << ")" << dum;
+    fontDetails(font, stdout);
+    if (storeNativeQFont) {
+        QSettings().setValue("font", font);
+    }
+    else{
+        QSettings().setValue("font", font.toString());
+    }
+}
+
 void Dialog::setFont()
 {
     const QFontDialog::FontDialogOptions options = QFlag(fontDialogOptionsWidget->value());
@@ -435,40 +478,11 @@ void Dialog::setFont()
 //     }
     bool ok;
     qWarning() << "Preselecting font=" << font;
-    font = QFontDialog::getFont(&ok, font, this, "Select Font", options);
+    QFont fnt = QFontDialog::getFont(&ok, font, this, "Select Font", options);
     if (ok) {
-        fontLabel->setText(font.key());
-        fontLabel->setFont(font);
-        fontLabel2->setText(fontRepr(font));
-        fontLabel2->setFont(font);
-        fontStyleName->setText(font.styleName());
-        fontStyleName->setFont(font);
-        QFontDatabase db;
-        fontPreview->setFont(font);
-        fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
-
-        {   QFont tmp = stripStyleName(font);
-            clonedLabel->setFont(tmp);
-            tmp.setBold(true);
-            clonedBoldLabel->setFont(tmp);
-        }
-        clonedLabel->setText(clonedLabel->font().key());
-        clonedBoldLabel->setText(clonedBoldLabel->font().key());
-
-        qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
-        qWarning() << "font.key():" << font.key();
-        QFont dum;
-        dum.fromString(font.toString());
-        qWarning() << "QFont::fromString(" << font.toString() << ")" << dum;
-        fontDetails(font, stdout);
-        if (storeNativeQFont) {
-            QSettings().setValue("font", font);
-        }
-        else{
-            QSettings().setValue("font", font.toString());
-        }
+        setFont(fnt);
     }
-    benchmarkCloning(font);
+    benchmarkCloning(fnt);
 }
 
 void Dialog::setFontFromSpecs()
@@ -494,12 +508,12 @@ void Dialog::setFontFromSpecs()
         fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
 
         {   QFont tmp = stripStyleName(font2);
-            clonedLabel->setFont(tmp);
+            clonedFontPreview->setFont(tmp);
             tmp.setBold(true);
-            clonedBoldLabel->setFont(tmp);
+            clonedBoldFontPreview->setFont(tmp);
         }
-        clonedLabel->setText(clonedLabel->font().key());
-        clonedBoldLabel->setText(clonedBoldLabel->font().key());
+        clonedFontPreview->setText(clonedFontPreview->font().key());
+        clonedBoldFontPreview->setText(clonedBoldFontPreview->font().key());
 
         qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
         qWarning() << "font.key():" << font.key();
@@ -548,6 +562,20 @@ void Dialog::getFontFromFamily()
         fontFamilyPreview->setFont(famFont);
         fontFamilyPreview->setText(text + QLatin1String(" -> ") + famFont.toString()
             + QLatin1String(" = ") + QFontInfo(famFont).family());
+    }
+}
+
+void Dialog::setFontStyleName()
+{
+    bool ok;
+    QString text = QInputDialog::getText(this, tr("QFont::styleName()"),
+                                         tr("Font styleName:"), QLineEdit::Normal,
+                                         font.styleName(), &ok);
+    if (ok && !text.isEmpty()) {
+        QFont fnt(font);
+        fnt.setStyleName(text);
+        styledFontPreview->setFont(fnt);
+        styledFontPreview->setText(fnt.key());
     }
 }
 

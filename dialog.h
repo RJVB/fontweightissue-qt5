@@ -65,10 +65,13 @@ private slots:
     void setFontFromSpecs();
     void setFontStoreType();
     void getFontFromFamily();
+    void setFontStyleName();
 
 private:
+    void setFont(QFont &fnt);
+
     QLabel *fontLabel, *fontLabel2, *fontPreview, *fontFamilyPreview, *fontStyleName;
-    QLabel *clonedLabel, *clonedBoldLabel;
+    QLabel *clonedFontPreview, *clonedBoldFontPreview, *styledFontPreview;
     QFont font, famFont;
     DialogOptionsWidget *fontDialogOptionsWidget;
     QCheckBox *fontStoreTypeSel;
