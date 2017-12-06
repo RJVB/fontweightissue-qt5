@@ -128,6 +128,11 @@ static inline bool qstringCompareToList(const QString &style, const QStringList 
     return false;
 }
 
+void doSomethingWithQFont(QFont &fnt)
+{
+    fnt.setBold(true);
+}
+
 #include "timing.c"
 
 int main(int argc, char *argv[])
@@ -174,13 +179,13 @@ int main(int argc, char *argv[])
             pattern = blackStyleList[i % blackStyleList.size()];
             found =  qstringCompareToList(pattern, blackStyleList, exact) && qstringCompareToList(compareTo, blackStyleList, exact);
         }
-        qDebug() << N << " times qstringCompareToList in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
+        qInfo() << N << " times qstringCompareToList in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
         HRTime_tic();
         for( int i = 0 ; i < N && found; ++i ){
             pattern = blackStyleList[i % blackStyleList.size()];
             found = blackStyles.contains(pattern, exact) && blackStyles.contains(compareTo, exact);
         }
-        qDebug() << N << " times QFontStyleSet::contains in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
+        qInfo() << N << " times QFontStyleSet::contains in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
 
         exact = false;
     }

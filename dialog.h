@@ -68,6 +68,7 @@ private slots:
 
 private:
     QLabel *fontLabel, *fontLabel2, *fontPreview, *fontFamilyPreview, *fontStyleName;
+    QLabel *clonedLabel, *clonedBoldLabel;
     QFont font, famFont;
     DialogOptionsWidget *fontDialogOptionsWidget;
     QCheckBox *fontStoreTypeSel;

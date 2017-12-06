@@ -47,6 +47,7 @@
 #endif
 
 #include "dialog.h"
+#include "timing.h"
 
 #define MESSAGE \
     Dialog::tr("<p>Message boxes have a caption, a text, " \
@@ -57,6 +58,32 @@
     Dialog::tr("If a message box has detailed text, the user can reveal it " \
                "by pressing the Show Details... button.")
 
+QFont stripStyleName(const QFont &f)
+{
+    QFont g(f.family(), f.pointSize(), f.weight());
+    if (auto s = f.pixelSize() > 0) {
+        g.setPixelSize(s);
+    }
+    g.setStyleHint(f.styleHint(), f.styleStrategy());
+    g.setStyle(f.style());
+    if (f.underline()) {
+        g.setUnderline(true);
+    }
+    if (f.strikeOut()) {
+        g.setStrikeOut(true);
+    }
+    if (f.fixedPitch()) {
+        g.setFixedPitch(true);
+    }
+    return g;
+}
+
+// pointless clone function just for benchmarking purposes
+QFont clone(const QFont &f)
+{
+    QFont g(f);
+    return g;
+}
 
 class DialogOptionsWidget : public QGroupBox
 {
@@ -129,7 +156,7 @@ Dialog::Dialog(QWidget *parent)
         if (storeNativeQFont) {
             if (prefFont.canConvert<QFont>()) {
                 font = prefFont.value<QFont>();
-                qWarning() << "Restoring saved native font" << font;
+                qWarning() << "Restoring saved native font" << font << "from" << prefFont;
                 fontDetails(font, stdout);
             }
             else {
@@ -171,6 +198,20 @@ Dialog::Dialog(QWidget *parent)
     QFontDatabase db;
     fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
 
+    clonedLabel = new QLabel;
+    clonedLabel->setFrameStyle(frameStyle);
+    clonedLabel->setToolTip(tr("this shows the font cloned without styleName"));
+    clonedBoldLabel = new QLabel;
+    clonedBoldLabel->setFrameStyle(frameStyle);
+    clonedBoldLabel->setToolTip(tr("this shows the font cloned without styleName and made bold"));
+    {   QFont tmp = stripStyleName(font);
+        clonedLabel->setFont(tmp);
+        tmp.setBold(true);
+        clonedBoldLabel->setFont(tmp);
+    }
+    clonedLabel->setText(clonedLabel->font().key());
+    clonedBoldLabel->setText(clonedBoldLabel->font().key());
+
     QPushButton *famButton = new QPushButton(tr("Lookup from Family"));
     fontFamilyPreview = new QLabel;
     fontFamilyPreview->setFrameStyle(frameStyle);
@@ -190,8 +231,11 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(fontLabel2, 1, 1);
     layout->addWidget(fontPreview, 2, 0);
     layout->addWidget(fontStyleName, 2, 1);
-    layout->addWidget(famButton, 3, 0);
-    layout->addWidget(fontFamilyPreview, 3, 1);
+    layout->addWidget(clonedLabel, 3, 0);
+    layout->addWidget(clonedBoldLabel, 3, 1);
+    layout->addWidget(famButton, 4, 0);
+    layout->addWidget(fontFamilyPreview, 4, 1);
+
     fontDialogOptionsWidget = new DialogOptionsWidget;
     fontDialogOptionsWidget->addCheckBox(doNotUseNativeDialog, QFontDialog::DontUseNativeDialog);
     fontDialogOptionsWidget->addCheckBox(tr("No buttons") , QFontDialog::NoButtons);
@@ -202,7 +246,7 @@ Dialog::Dialog(QWidget *parent)
 #if 0
     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 #endif
-    layout->addWidget(fontDialogOptionsWidget, 4, 0, 1 ,2);
+    layout->addWidget(fontDialogOptionsWidget, 5, 0, 1 ,2);
     setLayout(layout);
 
     setWindowTitle(tr("Font Selection"));
@@ -363,6 +407,15 @@ void Dialog::setFont()
         QFontDatabase db;
         fontPreview->setFont(font);
         fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
+
+        {   QFont tmp = stripStyleName(font);
+            clonedLabel->setFont(tmp);
+            tmp.setBold(true);
+            clonedBoldLabel->setFont(tmp);
+        }
+        clonedLabel->setText(clonedLabel->font().key());
+        clonedBoldLabel->setText(clonedBoldLabel->font().key());
+
         qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
         qWarning() << "font.key():" << font.key();
         QFont dum;
@@ -374,6 +427,37 @@ void Dialog::setFont()
         }
         else{
             QSettings().setValue("font", font.toString());
+        }
+
+        {   int N = 10000000, fact = 1;
+            int i;
+            extern void doSomethingWithQFont(QFont&);
+            double overhead;
+            do {
+                N *= fact;
+                HRTime_tic();
+                QFont tmp(font);
+                for (i = 0 ; i < N ; ++i) {
+                    doSomethingWithQFont(tmp);
+                }
+                overhead = HRTime_toc();
+                qInfo() << "overhead=" << overhead;
+                fact = 2;
+            } while (overhead < 0.05);
+            HRTime_tic();
+            for (i = 0 ; i < N ; ++i) {
+                QFont tmp(stripStyleName(font));
+                doSomethingWithQFont(tmp);
+            }
+            double elapsed = HRTime_toc();
+            qWarning() << N << "times `QFont tmp=stripStyleName(font)`:" << elapsed - overhead << "seconds";
+            HRTime_tic();
+            for (i = 0 ; i < N ; ++i) {
+                QFont tmp(clone(font));
+                doSomethingWithQFont(tmp);
+            }
+            elapsed = HRTime_toc();
+            qWarning() << N << "times `QFont tmp(font)`:" << elapsed - overhead << "seconds";
         }
     }
 }
@@ -399,6 +483,15 @@ void Dialog::setFontFromSpecs()
         QFontDatabase db;
         fontPreview->setFont(font);
         fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
+
+        {   QFont tmp = stripStyleName(font2);
+            clonedLabel->setFont(tmp);
+            tmp.setBold(true);
+            clonedBoldLabel->setFont(tmp);
+        }
+        clonedLabel->setText(clonedLabel->font().key());
+        clonedBoldLabel->setText(clonedBoldLabel->font().key());
+
         qWarning() << "QFontDatabase::styleString for this typeface:" << db.styleString(font);
         qWarning() << "font.key():" << font.key();
         QFont dum;
