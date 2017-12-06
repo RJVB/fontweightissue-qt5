@@ -60,22 +60,26 @@
 
 QFont stripStyleName(const QFont &f)
 {
-    QFont g(f.family(), f.pointSize(), f.weight());
-    if (auto s = f.pixelSize() > 0) {
-        g.setPixelSize(s);
+    if (f.styleName().isEmpty()) {
+        return f;
+    } else {
+        QFont g(f.family(), f.pointSize(), f.weight());
+        if (auto s = f.pixelSize() > 0) {
+            g.setPixelSize(s);
+        }
+        g.setStyleHint(f.styleHint(), f.styleStrategy());
+        g.setStyle(f.style());
+        if (f.underline()) {
+            g.setUnderline(true);
+        }
+        if (f.strikeOut()) {
+            g.setStrikeOut(true);
+        }
+        if (f.fixedPitch()) {
+            g.setFixedPitch(true);
+        }
+        return g;
     }
-    g.setStyleHint(f.styleHint(), f.styleStrategy());
-    g.setStyle(f.style());
-    if (f.underline()) {
-        g.setUnderline(true);
-    }
-    if (f.strikeOut()) {
-        g.setStrikeOut(true);
-    }
-    if (f.fixedPitch()) {
-        g.setFixedPitch(true);
-    }
-    return g;
 }
 
 // pointless clone function just for benchmarking purposes
@@ -83,6 +87,39 @@ QFont clone(const QFont &f)
 {
     QFont g(f);
     return g;
+}
+
+void benchmarkCloning(QFont &font)
+{
+    int N = 1000000, fact = 1;
+    int i;
+    extern void doSomethingWithQFont(QFont&);
+    double overhead;
+    do {
+        N *= fact;
+        HRTime_tic();
+        QFont tmp(font);
+        for (i = 0 ; i < N ; ++i) {
+            doSomethingWithQFont(tmp);
+        }
+        overhead = HRTime_toc();
+        qInfo() << "overhead=" << overhead;
+        fact = 2;
+    } while (overhead < 0.05);
+    HRTime_tic();
+    for (i = 0 ; i < N ; ++i) {
+        QFont tmp(stripStyleName(font));
+        doSomethingWithQFont(tmp);
+    }
+    double elapsed = HRTime_toc();
+    qWarning() << N << "times `QFont tmp=stripStyleName(font)`:" << elapsed - overhead << "seconds";
+    HRTime_tic();
+    for (i = 0 ; i < N ; ++i) {
+        QFont tmp(clone(font));
+        doSomethingWithQFont(tmp);
+    }
+    elapsed = HRTime_toc();
+    qWarning() << N << "times `QFont tmp(font)`:" << elapsed - overhead << "seconds";
 }
 
 class DialogOptionsWidget : public QGroupBox
@@ -291,6 +328,8 @@ Dialog::Dialog(QWidget *parent)
     styleHintString[QFont::Cursive] = "Cursive";
     styleHintString[QFont::Monospace] = "Monospace";
     styleHintString[QFont::Fantasy] = "Fantasy";
+
+    benchmarkCloning(font);
 }
 
 // Linux/X11:
@@ -428,38 +467,8 @@ void Dialog::setFont()
         else{
             QSettings().setValue("font", font.toString());
         }
-
-        {   int N = 10000000, fact = 1;
-            int i;
-            extern void doSomethingWithQFont(QFont&);
-            double overhead;
-            do {
-                N *= fact;
-                HRTime_tic();
-                QFont tmp(font);
-                for (i = 0 ; i < N ; ++i) {
-                    doSomethingWithQFont(tmp);
-                }
-                overhead = HRTime_toc();
-                qInfo() << "overhead=" << overhead;
-                fact = 2;
-            } while (overhead < 0.05);
-            HRTime_tic();
-            for (i = 0 ; i < N ; ++i) {
-                QFont tmp(stripStyleName(font));
-                doSomethingWithQFont(tmp);
-            }
-            double elapsed = HRTime_toc();
-            qWarning() << N << "times `QFont tmp=stripStyleName(font)`:" << elapsed - overhead << "seconds";
-            HRTime_tic();
-            for (i = 0 ; i < N ; ++i) {
-                QFont tmp(clone(font));
-                doSomethingWithQFont(tmp);
-            }
-            elapsed = HRTime_toc();
-            qWarning() << N << "times `QFont tmp(font)`:" << elapsed - overhead << "seconds";
-        }
     }
+    benchmarkCloning(font);
 }
 
 void Dialog::setFontFromSpecs()
