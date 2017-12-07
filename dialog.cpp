@@ -64,10 +64,9 @@ QFont stripStyleName(QFont &f, QFontDatabase &db)
     if (styleName.isEmpty()) {
         return f;
     } else {
-        if (db.styleString(f) != styleName) {
-            f = db.font(f.family(), styleName, f.pointSize());
-        }
-        QFont g(f.family(), f.pointSize(), f.weight());
+        QFont g = (db.styleString(f) != styleName) ?
+            db.font(f.family(), styleName, f.pointSize())
+            : QFont(f.family(), f.pointSize(), f.weight());
         if (auto s = f.pixelSize() > 0) {
             g.setPixelSize(s);
         }
