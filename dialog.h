@@ -78,9 +78,9 @@ private:
     bool storeNativeQFont;
     QMap<QFont::Style, QString> styleString;
     QMap<QFont::StyleHint, QString> styleHintString;
-    void fontDetails(QFont &font, QTextStream &sink);
+    QFont fontDetails(QFont &font, QTextStream &sink);
     QString fontDetails(QFont &font);
-    void fontDetails(QFont &font, FILE *fp);
+    QFont fontDetails(QFont &font, FILE *fp);
 };
 
 #endif

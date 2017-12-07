@@ -258,7 +258,8 @@ Dialog::Dialog(QWidget *parent)
     QPushButton *styleButton = new QPushButton(tr("set styleName"));
     styledFontPreview = new QLabel;
     styledFontPreview->setFrameStyle(frameStyle);
-    styledFontPreview->setToolTip(tr("this shows the result of setting a stylename on the selected font"));
+#define STYLEDFNTPREVIEWTT "this shows the result of setting a stylename on the selected font\nResolves to: %1"
+    styledFontPreview->setToolTip(tr(STYLEDFNTPREVIEWTT).arg(styledFontPreview->font().toString()));
     connect(styleButton, SIGNAL(clicked()), this, SLOT(setFontStyleName()));
 
     QPushButton *famButton = new QPushButton(tr("Lookup from Family"));
@@ -408,8 +409,9 @@ Dialog::Dialog(QWidget *parent)
 //         ascent, descent: 11,3; average width=6
 //         height, x-height, max.width: 14,5,14; natural line spacing: -1
 
-void Dialog::fontDetails(QFont &font, QTextStream &sink)
+QFont Dialog::fontDetails(QFont &font, QTextStream &sink)
 {
+    QFont ret = font;
     QFontInfo fi(font);
     sink << "QFontInfo for " << font.toString() << (fi.exactMatch()? " (exact match):" : " :") << endl;
     sink << "\tfamily " << fi.family() << " " << fi.styleName() << "/" << styleString[fi.style()]
@@ -419,8 +421,9 @@ void Dialog::fontDetails(QFont &font, QTextStream &sink)
     QFontDatabase db;
     sink << "\tQFontDatabase::styleString() = " << db.styleString(font) << endl;
     if (!font.styleName().isEmpty()) {
+        ret = db.font(font.family(), font.styleName(), font.pointSize());
         sink << "\tQFontDatabase::font(" << font.family() << "," << font.styleName() << "," << font.pointSize() << ") = "
-            << db.font(font.family(), font.styleName(), font.pointSize()).toString() << endl;
+            << ret.toString() << endl;
     }
     QFontMetrics fm(font);
     sink << "QFontMetrics:" << endl;
@@ -428,6 +431,7 @@ void Dialog::fontDetails(QFont &font, QTextStream &sink)
         << "; average width=" << fm.averageCharWidth() << endl;
     sink << "\theight, x-height, max.width: " << fm.height() << "," << fm.xHeight() << "," << fm.maxWidth()
         << "; natural line spacing: " << fm.leading() << endl;
+    return ret;
 }
 
 QString Dialog::fontDetails(QFont &font)
@@ -438,10 +442,10 @@ QString Dialog::fontDetails(QFont &font)
     return details;
 }
 
-void Dialog::fontDetails(QFont &font, FILE *fp)
+QFont Dialog::fontDetails(QFont &font, FILE *fp)
 {
     QTextStream sink(fp);
-    fontDetails(font, sink);
+    return fontDetails(font, sink);
 }
 
 void Dialog::setFont(QFont &fnt)
@@ -590,7 +594,8 @@ void Dialog::setFontStyleName()
         fnt.setStyleName(text);
         styledFontPreview->setFont(fnt);
         styledFontPreview->setText(fnt.key());
-        fontDetails(fnt, stdout);
+        fnt = fontDetails(fnt, stdout);
+        styledFontPreview->setToolTip(tr(STYLEDFNTPREVIEWTT).arg(fnt.toString()));
     }
 }
 
