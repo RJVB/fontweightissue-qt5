@@ -58,11 +58,15 @@
     Dialog::tr("If a message box has detailed text, the user can reveal it " \
                "by pressing the Show Details... button.")
 
-QFont stripStyleName(const QFont &f)
+QFont stripStyleName(QFont &f, QFontDatabase &db)
 {
-    if (f.styleName().isEmpty()) {
+    const QString &styleName = f.styleName();
+    if (styleName.isEmpty()) {
         return f;
     } else {
+        if (db.styleString(f) != styleName) {
+            f = db.font(f.family(), styleName, f.pointSize());
+        }
         QFont g(f.family(), f.pointSize(), f.weight());
         if (auto s = f.pixelSize() > 0) {
             g.setPixelSize(s);
@@ -106,9 +110,10 @@ void benchmarkCloning(QFont &font)
         qInfo() << "overhead=" << overhead;
         fact = 2;
     } while (overhead < 0.05);
+    QFontDatabase db;
     HRTime_tic();
     for (i = 0 ; i < N ; ++i) {
-        QFont tmp(stripStyleName(font));
+        QFont tmp(stripStyleName(font, db));
         doSomethingWithQFont(tmp);
     }
     double elapsed = HRTime_toc();
@@ -241,7 +246,8 @@ Dialog::Dialog(QWidget *parent)
     clonedBoldFontPreview = new QLabel;
     clonedBoldFontPreview->setFrameStyle(frameStyle);
     clonedBoldFontPreview->setToolTip(tr("this shows the font cloned without styleName and made bold"));
-    {   QFont tmp = stripStyleName(font);
+    {   QFontDatabase db;
+        QFont tmp = stripStyleName(font, db);
         clonedFontPreview->setFont(tmp);
         tmp.setBold(true);
         clonedBoldFontPreview->setFont(tmp);
@@ -405,17 +411,23 @@ Dialog::Dialog(QWidget *parent)
 void Dialog::fontDetails(QFont &font, QTextStream &sink)
 {
     QFontInfo fi(font);
-    sink << "QFontInfo for " << font.toString() << (fi.exactMatch()? " (exact match):" : " :") << '\n' << flush;
+    sink << "QFontInfo for " << font.toString() << (fi.exactMatch()? " (exact match):" : " :") << endl;
     sink << "\tfamily " << fi.family() << " " << fi.styleName() << "/" << styleString[fi.style()]
         << (fi.bold()? " bold " : " ")
-        << fi.pointSizeF() << "pt; weight " << fi.weight() << '\n' << flush;
-    sink << "\tstyleHint: " << styleHintString[fi.styleHint()] << (fi.fixedPitch()? ", fixed pitch" : "") << '\n' << flush;
+        << fi.pointSizeF() << "pt; weight " << fi.weight() << endl;
+    sink << "\tstyleHint: " << styleHintString[fi.styleHint()] << (fi.fixedPitch()? ", fixed pitch" : "") << endl;
+    QFontDatabase db;
+    sink << "\tQFontDatabase::styleString() = " << db.styleString(font) << endl;
+    if (!font.styleName().isEmpty()) {
+        sink << "\tQFontDatabase::font(" << font.family() << "," << font.styleName() << "," << font.pointSize() << ") = "
+            << db.font(font.family(), font.styleName(), font.pointSize()).toString() << endl;
+    }
     QFontMetrics fm(font);
-    sink << "QFontMetrics:" << '\n' << flush;
+    sink << "QFontMetrics:" << endl;
     sink << "\tascent, descent: " << fm.ascent() << "," << fm.descent()
-        << "; average width=" << fm.averageCharWidth() << '\n' << flush;
+        << "; average width=" << fm.averageCharWidth() << endl;
     sink << "\theight, x-height, max.width: " << fm.height() << "," << fm.xHeight() << "," << fm.maxWidth()
-        << "; natural line spacing: " << fm.leading() << '\n' << flush;
+        << "; natural line spacing: " << fm.leading() << endl;
 }
 
 QString Dialog::fontDetails(QFont &font)
@@ -445,7 +457,8 @@ void Dialog::setFont(QFont &fnt)
     fontPreview->setFont(font);
     fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
 
-    {   QFont tmp = stripStyleName(font);
+    {   QFontDatabase db;
+        QFont tmp = stripStyleName(font, db);
         clonedFontPreview->setFont(tmp);
         tmp.setBold(true);
         clonedBoldFontPreview->setFont(tmp);
@@ -507,7 +520,8 @@ void Dialog::setFontFromSpecs()
         fontPreview->setFont(font);
         fontPreview->setText( font.family() + tr(" ") + db.styleString(font) + tr(" @ ") + QString("%1pt").arg(font.pointSizeF()) );
 
-        {   QFont tmp = stripStyleName(font2);
+        {   QFontDatabase db;
+            QFont tmp = stripStyleName(font2, db);
             clonedFontPreview->setFont(tmp);
             tmp.setBold(true);
             clonedBoldFontPreview->setFont(tmp);
@@ -576,6 +590,7 @@ void Dialog::setFontStyleName()
         fnt.setStyleName(text);
         styledFontPreview->setFont(fnt);
         styledFontPreview->setText(fnt.key());
+        fontDetails(fnt, stdout);
     }
 }
 
