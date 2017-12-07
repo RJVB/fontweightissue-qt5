@@ -589,13 +589,22 @@ void Dialog::setFontStyleName()
     QString text = QInputDialog::getText(this, tr("QFont::styleName()"),
                                          tr("Font styleName:"), QLineEdit::Normal,
                                          font.styleName(), &ok);
-    if (ok && !text.isEmpty()) {
+    if (ok) {
         QFont fnt(font);
         fnt.setStyleName(text);
         styledFontPreview->setFont(fnt);
         styledFontPreview->setText(fnt.key());
         fnt = fontDetails(fnt, stdout);
         styledFontPreview->setToolTip(tr(STYLEDFNTPREVIEWTT).arg(fnt.toString()));
+        QFont boldFnt(fnt);
+        boldFnt.setStyleName(QString());
+        boldFnt.setBold(true);
+        qWarning() << "style name emptied, font boldened:" << boldFnt.toString();
+        QFontDatabase db;
+        QFont stripped = stripStyleName(fnt, db);
+        qWarning() << "stripStyleName() gives" << stripped.toString();
+        stripped.setBold(true);
+        qWarning() << "\tboldened:" << stripped.toString();
     }
 }
 
