@@ -287,6 +287,12 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(famButton, 5, 0);
     layout->addWidget(fontFamilyPreview, 5, 1);
 
+    paintLabel = new QFrame;
+    paintLabel->setFrameStyle(frameStyle);
+    paintLabel->setToolTip(tr("This shows a low-level render via QRawFont"));
+    layout->addWidget(paintLabel, 6, 0, 1 ,2);
+    layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
+
     fontDialogOptionsWidget = new DialogOptionsWidget;
     fontDialogOptionsWidget->addCheckBox(doNotUseNativeDialog, QFontDialog::DontUseNativeDialog);
     fontDialogOptionsWidget->addCheckBox(tr("No buttons") , QFontDialog::NoButtons);
@@ -297,10 +303,14 @@ Dialog::Dialog(QWidget *parent)
 #if 0
     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 #endif
-    layout->addWidget(fontDialogOptionsWidget, 6, 0, 1 ,2);
+    layout->addWidget(fontDialogOptionsWidget, 7, 0, 1 ,2);
+
     setLayout(layout);
 
     setWindowTitle(tr("Font Selection"));
+
+    update();
+
 #if QT_VERSION >= QT_VERSION_CHECK(5,5,0)
     qWarning() << "For reference: QFont::ExtraLight=" << QFont::ExtraLight
              << "QFont::Thin=" << QFont::Thin
@@ -343,7 +353,7 @@ Dialog::Dialog(QWidget *parent)
     styleHintString[QFont::Monospace] = "Monospace";
     styleHintString[QFont::Fantasy] = "Fantasy";
 
-    benchmarkCloning(font);
+//     benchmarkCloning(font);
 }
 
 // Linux/X11:
@@ -413,7 +423,7 @@ QFont Dialog::fontDetails(QFont &font, QTextStream &sink)
     QFont ret = font;
     QFontInfo fi(font);
     sink << "QFontInfo for " << font.toString() << (fi.exactMatch()? " (exact match):" : " :") << endl;
-    sink << "\tfamily " << fi.family() << " " << fi.styleName() << "/" << styleString[fi.style()]
+    sink << "\tfamily " << fi.family() << " styleName=" << fi.styleName() << ", style=" << styleString[fi.style()]
         << (fi.bold()? " bold " : " ")
         << fi.pointSizeF() << "pt; weight " << fi.weight() << endl;
     sink << "\tstyleHint: " << styleHintString[fi.styleHint()] << (fi.fixedPitch()? ", fixed pitch" : "") << endl;
@@ -481,6 +491,8 @@ void Dialog::setFont(QFont &fnt)
     else{
         QSettings().setValue("font", font.toString());
     }
+    fontLabel->update();
+    setPaintFont(font, fontLabel->height());
 }
 
 void Dialog::setFont()
@@ -548,6 +560,8 @@ void Dialog::setFontFromSpecs()
 //         store.sync();
 //         qWarning() << "Font QSetting" << store.allKeys() << "status:" << store.status();
 //         qWarning() << "settings(\"font\")=" << store.value("font") << "canConvert<QFont>:" << store.value("font").canConvert<QFont>();
+        fontLabel2->update();
+        setPaintFont(font2, fontLabel2->height());
     }
 }
 
@@ -579,6 +593,8 @@ void Dialog::getFontFromFamily()
         fontFamilyPreview->setFont(famFont);
         fontFamilyPreview->setText(text + QLatin1String(" -> ") + famFont.toString()
             + QLatin1String(" = ") + QFontInfo(famFont).family());
+        fontFamilyPreview->update();
+        setPaintFont(famFont, fontFamilyPreview->height());
     }
 }
 
@@ -607,7 +623,44 @@ void Dialog::setFontStyleName()
     }
 }
 
+void Dialog::setPaintFont(const QFont &font, int height)
+{
+    QRawFont rawFont = QRawFont::fromFont(font);
+
+    QTextLayout layout(font.toString());
+    layout.setRawFont(rawFont);
+    layout.beginLayout();
+    QTextLine line = layout.createLine();
+    line.setLineWidth(INT_MAX/256);
+    layout.endLayout();
+
+    glyphRuns = line.glyphRuns();
+    paintLabel->setFixedHeight(height);
+    paintLabel->update();
+
+    update();
+}
+
+void Dialog::paintEvent(QPaintEvent *)
+{
+    const auto margins = paintLabel->contentsMargins();
+    const auto frame = paintLabel->geometry().marginsRemoved(margins);
+//     qWarning() << "paintLabel at" << frame << frame.topLeft();
+
+//     qWarning() << "Drawing" << glyphRuns.size() << "glyphruns at" << frame.topLeft();
+    if (glyphRuns.isEmpty())
+        return;
+
+    QPainter p;
+    p.begin(this);
+    p.setPen(Qt::black);
+
+    p.drawGlyphRun(frame.topLeft(), glyphRuns.first());
+    p.end();
+}
+
 const char *qFontToString(QFont *qfont)
 {
     return qfont->toString().toLatin1().data();
 }
+

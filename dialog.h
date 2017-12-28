@@ -43,11 +43,14 @@
 
 #include <QWidget>
 #include <QMap>
+#include <QList>
+#include <QGlyphRun>
 
 QT_BEGIN_NAMESPACE
 class QCheckBox;
 class QLabel;
 class QErrorMessage;
+class QFrame;
 QT_END_NAMESPACE
 
 class DialogOptionsWidget;
@@ -59,6 +62,9 @@ class Dialog : public QWidget
 
 public:
     Dialog(QWidget *parent = 0);
+
+    void setPaintFont(const QFont &font, int height);
+    void paintEvent(QPaintEvent *);
 
 private slots:
     void setFont();
@@ -81,6 +87,9 @@ private:
     QFont fontDetails(QFont &font, QTextStream &sink);
     QString fontDetails(QFont &font);
     QFont fontDetails(QFont &font, FILE *fp);
+
+    QFrame *paintLabel;
+    QList<QGlyphRun> glyphRuns;
 };
 
 #endif
