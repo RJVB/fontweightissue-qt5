@@ -51,6 +51,7 @@ class QCheckBox;
 class QLabel;
 class QErrorMessage;
 class QFrame;
+class QSpinBox;
 QT_END_NAMESPACE
 
 class DialogOptionsWidget;
@@ -63,7 +64,8 @@ class Dialog : public QWidget
 public:
     Dialog(QWidget *parent = 0);
 
-    void setPaintFont(const QFont &font, int height);
+    void setPaintFont(const QRawFont &font, const QString &text);
+    void setPaintFont(const QFont &font);
     void paintEvent(QPaintEvent *);
 
 private slots:
@@ -71,6 +73,7 @@ private slots:
     void setFontFromSpecs();
     void setFontStoreType();
     void getFontFromFamily();
+    void getFontFromFile();
     void setFontStyleName();
 
 private:
@@ -88,6 +91,8 @@ private:
     QString fontDetails(QFont &font);
     QFont fontDetails(QFont &font, FILE *fp);
 
+    QRawFont rawFont;
+    QSpinBox *rawFontSize;
     QFrame *paintLabel;
     QList<QGlyphRun> glyphRuns;
 };

@@ -287,11 +287,22 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(famButton, 5, 0);
     layout->addWidget(fontFamilyPreview, 5, 1);
 
+    QPushButton *rawButton = new QPushButton(tr("Load font file"));
+    connect(rawButton, SIGNAL(clicked()), this, SLOT(getFontFromFile()));
+    rawFontSize = new QSpinBox;
+    rawFontSize->setRange(1, 256);
+    rawFontSize->setValue(12);
+    rawFontSize->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    connect(rawFontSize, SIGNAL(valueChanged(int)), this, SLOT(getFontFromFile()));
     paintLabel = new QFrame;
     paintLabel->setFrameStyle(frameStyle);
-    paintLabel->setToolTip(tr("This shows a low-level render via QRawFont"));
-    layout->addWidget(paintLabel, 6, 0, 1 ,2);
-    layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
+    paintLabel->setToolTip(tr("This shows a low-level render of the font file via QRawFont"));
+    QGridLayout *rf = new QGridLayout;
+    rf->addWidget(rawButton, 0, 0);
+    rf->addWidget(rawFontSize, 0, 1);
+    layout->addLayout(rf, 7, 0);
+    layout->addWidget(paintLabel, 7, 1);
+//     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 
     fontDialogOptionsWidget = new DialogOptionsWidget;
     fontDialogOptionsWidget->addCheckBox(doNotUseNativeDialog, QFontDialog::DontUseNativeDialog);
@@ -303,7 +314,7 @@ Dialog::Dialog(QWidget *parent)
 #if 0
     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 #endif
-    layout->addWidget(fontDialogOptionsWidget, 7, 0, 1 ,2);
+    layout->addWidget(fontDialogOptionsWidget, 8, 0, 1 ,2);
 
     setLayout(layout);
 
@@ -492,7 +503,7 @@ void Dialog::setFont(QFont &fnt)
         QSettings().setValue("font", font.toString());
     }
     fontLabel->update();
-    setPaintFont(font, fontLabel->height());
+    setPaintFont(font);
 }
 
 void Dialog::setFont()
@@ -561,7 +572,7 @@ void Dialog::setFontFromSpecs()
 //         qWarning() << "Font QSetting" << store.allKeys() << "status:" << store.status();
 //         qWarning() << "settings(\"font\")=" << store.value("font") << "canConvert<QFont>:" << store.value("font").canConvert<QFont>();
         fontLabel2->update();
-        setPaintFont(font2, fontLabel2->height());
+        setPaintFont(font2);
     }
 }
 
@@ -594,7 +605,43 @@ void Dialog::getFontFromFamily()
         fontFamilyPreview->setText(text + QLatin1String(" -> ") + famFont.toString()
             + QLatin1String(" = ") + QFontInfo(famFont).family());
         fontFamilyPreview->update();
-        setPaintFont(famFont, fontFamilyPreview->height());
+        setPaintFont(famFont);
+    }
+}
+
+void Dialog::getFontFromFile()
+{
+    int pointSize = rawFontSize->value();
+    if (sender() != rawFontSize) {
+        static QString startDir = QStandardPaths::writableLocation(QStandardPaths::FontsLocation);
+        QString fName = QFileDialog::getOpenFileName(this, tr("Pick a font file"), startDir);
+        if (!fName.isEmpty()) {
+            QFileInfo fi(fName);
+            startDir = fi.absoluteDir().path();
+#ifdef QRAWFONT_FROM_DATA
+            QFile f(fName);
+            f.open(QIODevice::ReadOnly);
+            QByteArray fontData = f.readAll();
+            f.close();
+            QRawFont rFont(fontData, pointSize, QFont::PreferFullHinting);
+#else
+            QRawFont rFont(fName, pointSize, QFont::PreferFullHinting);
+#endif
+            if (rFont.isValid()) {
+                qWarning() << "Read font from" << fName;
+                rawFont = rFont;
+            } else {
+                qWarning() << fName << "doesn't give a valid font";
+                return;
+            }
+        }
+    }
+    if (rawFont.isValid()) {
+        rawFont.setPixelSize(pointSize);
+        const QString label = QStringLiteral("%1 %2 @ %3pt")\
+            .arg(rawFont.familyName()).arg(rawFont.styleName()).arg(pointSize);
+        qWarning() << "Raw font:" << label;
+        setPaintFont(rawFont, label);
     }
 }
 
@@ -623,22 +670,34 @@ void Dialog::setFontStyleName()
     }
 }
 
-void Dialog::setPaintFont(const QFont &font, int height)
+void Dialog::setPaintFont(const QRawFont &rFont, const QString &text)
 {
-    QRawFont rawFont = QRawFont::fromFont(font);
+    rawFont = rFont;
 
-    QTextLayout layout(font.toString());
-    layout.setRawFont(rawFont);
+    const auto glIdx = rawFont.glyphIndexesForString(text);
+    const auto advances = rawFont.advancesForGlyphIndexes(glIdx, QRawFont::SeparateAdvances);
+    qWarning() << text << "advances=" << advances;
+
+    QTextLayout layout(text);
+    layout.setRawFont(rFont);
     layout.beginLayout();
     QTextLine line = layout.createLine();
     line.setLineWidth(INT_MAX/256);
     layout.endLayout();
 
     glyphRuns = line.glyphRuns();
-    paintLabel->setFixedHeight(height);
+    paintLabel->setFixedHeight(rawFont.ascent() + rawFont.descent() + 4);
     paintLabel->update();
 
     update();
+}
+
+void Dialog::setPaintFont(const QFont &font)
+{
+    QRawFont rFont = QRawFont::fromFont(font);
+    rFont.setPixelSize(rawFontSize->value());
+    setPaintFont(rFont,
+         QStringLiteral("%1 %2 @ %3pt").arg(rFont.familyName()).arg(rFont.styleName()).arg(rFont.pixelSize()));
 }
 
 void Dialog::paintEvent(QPaintEvent *)
