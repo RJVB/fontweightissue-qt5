@@ -42,6 +42,7 @@
 #define DIALOG_H
 
 #include <QWidget>
+#include <QDialog>
 #include <QMap>
 #include <QList>
 #include <QGlyphRun>
@@ -57,7 +58,7 @@ QT_END_NAMESPACE
 class DialogOptionsWidget;
 class QTextStream;
 
-class Dialog : public QWidget
+class Dialog : public QDialog
 {
     Q_OBJECT
 

@@ -40,6 +40,7 @@
 
 #include <QtGlobal>
 #include <QtWidgets>
+#include <QWindow>
 #include <QApplication>
 
 #if QT_VERSION >= QT_VERSION_CHECK(5,4,0)
@@ -176,8 +177,10 @@ static QString fontRepr(QFont &font)
 }
 
 Dialog::Dialog(QWidget *parent)
-    : QWidget(parent)
+    : QDialog(parent)
 {
+    setAttribute(Qt::WA_QuitOnClose, true);
+
     qApp->setStyleSheet("QLabel{ background: white }");
     int frameStyle = QFrame::Sunken | QFrame::Panel;
     QSettings store;
@@ -686,6 +689,10 @@ void Dialog::setPaintFont(const QRawFont &rFont, const QString &text)
     layout.endLayout();
 
     glyphRuns = line.glyphRuns();
+    qWarning() << "Bounding rect(s):";
+    foreach (const auto glyph, glyphRuns) {
+        qWarning() << glyph.boundingRect();
+    }
     paintLabel->setFixedHeight(rawFont.ascent() + rawFont.descent() + 4);
     paintLabel->update();
 
@@ -714,7 +721,10 @@ void Dialog::paintEvent(QPaintEvent *)
     p.begin(this);
     p.setPen(Qt::black);
 
-    p.drawGlyphRun(frame.topLeft(), glyphRuns.first());
+    QPoint point(frame.topLeft());
+    foreach (const auto glyph, glyphRuns) {
+        p.drawGlyphRun(point, glyph);
+    }
     p.end();
 }
 
