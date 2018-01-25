@@ -367,6 +367,8 @@ Dialog::Dialog(QWidget *parent)
     styleHintString[QFont::Monospace] = "Monospace";
     styleHintString[QFont::Fantasy] = "Fantasy";
 
+    qWarning() << "Current substitutions:" << QFont::substitutions();
+
 //     benchmarkCloning(font);
 }
 
