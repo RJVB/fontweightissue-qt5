@@ -367,7 +367,11 @@ Dialog::Dialog(QWidget *parent)
     styleHintString[QFont::Monospace] = "Monospace";
     styleHintString[QFont::Fantasy] = "Fantasy";
 
-    qWarning() << "Current substitutions:" << QFont::substitutions();
+    QFont::insertSubstitution(QStringLiteral("Helvetica"), QStringLiteral("Helvetica Neue"));
+    qWarning() << "Current substitutions:";
+    foreach (const auto subst, QFont::substitutions()) {
+        qWarning() << "\t" << subst << "->" << QFont::substitutes(subst);
+    }
 
 //     benchmarkCloning(font);
 }
@@ -605,6 +609,7 @@ void Dialog::getFontFromFamily()
                                          famFont.family(), &ok);
     if (ok && !text.isEmpty()) {
         qWarning() << "Substitutes for" << text << ":" << QFont::substitutes(text);
+//         famFont.setStyleStrategy(QFont::ForceOutline);
         famFont.setFamily(text);
         fontFamilyPreview->setFont(famFont);
         fontFamilyPreview->setText(text + QLatin1String(" -> ") + famFont.toString()
