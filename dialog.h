@@ -76,12 +76,13 @@ private slots:
     void getFontFromFamily();
     void getFontFromFile();
     void setFontStyleName();
+    void applyStretch();
 
 private:
     void setFont(QFont &fnt);
 
     QLabel *fontLabel, *fontLabel2, *fontPreview, *fontFamilyPreview, *fontStyleName;
-    QLabel *clonedFontPreview, *clonedBoldFontPreview, *styledFontPreview;
+    QLabel *clonedFontPreview, *clonedBoldFontPreview, *styledFontPreview, *stretchedFontPreview;
     QFont font, famFont;
     DialogOptionsWidget *fontDialogOptionsWidget;
     QCheckBox *fontStoreTypeSel;
@@ -93,7 +94,7 @@ private:
     QFont fontDetails(QFont &font, FILE *fp);
 
     QRawFont rawFont;
-    QSpinBox *rawFontSize;
+    QSpinBox *rawFontSize, *fontStretch;
     QFrame *paintLabel;
     QList<QGlyphRun> glyphRuns;
 };

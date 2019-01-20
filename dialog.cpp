@@ -307,6 +307,21 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(paintLabel, 7, 1);
 //     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 
+    auto stretchLabel = new QLabel(this);
+    stretchLabel->setText(tr("stretch"));
+    stretchedFontPreview = new QLabel(this);
+    stretchedFontPreview->setFrameStyle(frameStyle);
+    stretchedFontPreview->setToolTip(tr("this shows the current font after stretching"));
+    fontStretch = new QSpinBox(this);
+    fontStretch->setRange(1, 4000);
+    fontStretch->setValue(QFont::Unstretched);
+    connect(fontStretch, SIGNAL(valueChanged(int)), this, SLOT(applyStretch()));
+    rf = new QGridLayout;
+    rf->addWidget(stretchLabel, 0, 0);
+    rf->addWidget(fontStretch, 0, 1);
+    layout->addLayout(rf, 8, 0);
+    layout->addWidget(stretchedFontPreview, 8, 1);
+
     fontDialogOptionsWidget = new DialogOptionsWidget;
     fontDialogOptionsWidget->addCheckBox(doNotUseNativeDialog, QFontDialog::DontUseNativeDialog);
     fontDialogOptionsWidget->addCheckBox(tr("No buttons") , QFontDialog::NoButtons);
@@ -317,7 +332,7 @@ Dialog::Dialog(QWidget *parent)
 #if 0
     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 #endif
-    layout->addWidget(fontDialogOptionsWidget, 8, 0, 1 ,2);
+    layout->addWidget(fontDialogOptionsWidget, 9, 0, 1 ,2);
 
     setLayout(layout);
 
@@ -513,6 +528,7 @@ void Dialog::setFont(QFont &fnt)
     }
     fontLabel->update();
     setPaintFont(font);
+    fontStretch->setValue(QFont::Unstretched);
 }
 
 void Dialog::setFont()
@@ -582,6 +598,7 @@ void Dialog::setFontFromSpecs()
 //         qWarning() << "settings(\"font\")=" << store.value("font") << "canConvert<QFont>:" << store.value("font").canConvert<QFont>();
         fontLabel2->update();
         setPaintFont(font2);
+        fontStretch->setValue(QFont::Unstretched);
     }
 }
 
@@ -712,6 +729,16 @@ void Dialog::setPaintFont(const QFont &font)
     rFont.setPixelSize(rawFontSize->value());
     setPaintFont(rFont,
          QStringLiteral("%1 %2 @ %3pt").arg(rFont.familyName()).arg(rFont.styleName()).arg(rFont.pixelSize()));
+}
+
+void Dialog::applyStretch()
+{
+    auto stretch = fontStretch->value();
+    QFont fnt(font);
+    fnt.setStretch(stretch);
+    stretchedFontPreview->setFont(fnt);
+    stretchedFontPreview->setText(fnt.key());
+    fnt = fontDetails(fnt, stdout);
 }
 
 void Dialog::paintEvent(QPaintEvent *)
