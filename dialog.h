@@ -85,7 +85,7 @@ private:
     QLabel *clonedFontPreview, *clonedBoldFontPreview, *styledFontPreview, *stretchedFontPreview;
     QFont font, famFont;
     DialogOptionsWidget *fontDialogOptionsWidget;
-    QCheckBox *fontStoreTypeSel;
+    QCheckBox *fontStoreTypeSel, *fontStretchOrSpace;
     bool storeNativeQFont;
     QMap<QFont::Style, QString> styleString;
     QMap<QFont::StyleHint, QString> styleHintString;

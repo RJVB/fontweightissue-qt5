@@ -307,17 +307,19 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(paintLabel, 7, 1);
 //     layout->addItem(new QSpacerItem(0, 0, QSizePolicy::Ignored, QSizePolicy::MinimumExpanding), 1, 0);
 
-    auto stretchLabel = new QLabel(this);
-    stretchLabel->setText(tr("stretch"));
+    fontStretchOrSpace = new QCheckBox(tr("stretch/space"), this);
+    fontStretchOrSpace->setToolTip(tr("Apply stretch (checked) or letter-spacing (unchecked)"));
+    fontStretchOrSpace->setChecked(true);
     stretchedFontPreview = new QLabel(this);
     stretchedFontPreview->setFrameStyle(frameStyle);
     stretchedFontPreview->setToolTip(tr("this shows the current font after stretching"));
     fontStretch = new QSpinBox(this);
     fontStretch->setRange(1, 4000);
     fontStretch->setValue(QFont::Unstretched);
+    fontStretch->setToolTip(tr("stretch or letter-spacing in percentage"));
     connect(fontStretch, SIGNAL(valueChanged(int)), this, SLOT(applyStretch()));
     rf = new QGridLayout;
-    rf->addWidget(stretchLabel, 0, 0);
+    rf->addWidget(fontStretchOrSpace, 0, 0);
     rf->addWidget(fontStretch, 0, 1);
     layout->addLayout(rf, 8, 0);
     layout->addWidget(stretchedFontPreview, 8, 1);
@@ -735,7 +737,11 @@ void Dialog::applyStretch()
 {
     auto stretch = fontStretch->value();
     QFont fnt(font);
-    fnt.setStretch(stretch);
+    if (fontStretchOrSpace->isChecked()) {
+        fnt.setStretch(stretch);
+    } else {
+        fnt.setLetterSpacing(QFont::PercentageSpacing, stretch);
+    }
     stretchedFontPreview->setFont(fnt);
     stretchedFontPreview->setText(fnt.key());
     fnt = fontDetails(fnt, stdout);
