@@ -462,7 +462,9 @@ QFont Dialog::fontDetails(QFont &font, QTextStream &sink)
     sink << "QFontInfo for " << font.toString() << (fi.exactMatch()? " (exact match):" : " :") << endl;
     sink << "\tfamily " << fi.family() << " styleName=" << fi.styleName() << ", style=" << styleString[fi.style()]
         << (fi.bold()? " bold " : " ")
-        << fi.pointSizeF() << "pt; weight " << fi.weight() << endl;
+        << fi.pointSizeF() << "pt; weight " << fi.weight() << "\n\t"
+        << "stretch: " << font.stretch() << "; l.spacing:" << font.letterSpacing()
+        << " type: " << font.letterSpacingType() << endl;
     sink << "\tstyleHint: " << styleHintString[fi.styleHint()] << (fi.fixedPitch()? ", fixed pitch" : "") << endl;
     QFontDatabase db;
     sink << "\tQFontDatabase::styleString() = " << db.styleString(font) << endl;
@@ -473,7 +475,8 @@ QFont Dialog::fontDetails(QFont &font, QTextStream &sink)
     }
     QFontMetrics fm(font);
     sink << "QFontMetrics:" << endl;
-    sink << "\tascent, descent: " << fm.ascent() << "," << fm.descent()
+    sink << "\tleading, ascent, descent: " << fm.leading() << "," << fm.ascent() << "," << fm.descent()
+        << "; bearings: " << fm.minLeftBearing() << "," << fm.minRightBearing()
         << "; average width=" << fm.averageCharWidth() << endl;
     sink << "\theight, x-height, max.width: " << fm.height() << "," << fm.xHeight() << "," << fm.maxWidth()
         << "; natural line spacing: " << fm.leading() << endl;
