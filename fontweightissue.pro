@@ -1,5 +1,5 @@
 QT += widgets core-private gui-private
-CONFIG += release
+CONFIG += release c++11
 QMAKE_CXXFLAGS_RELEASE -= -pipe -O2
 QMAKE_CXXFLAGS_RELEASE += -g -O3 -march=native
 
