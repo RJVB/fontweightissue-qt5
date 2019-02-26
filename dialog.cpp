@@ -643,8 +643,18 @@ void Dialog::getFontFromFile()
     int pointSize = rawFontSize->value();
     if (sender() != rawFontSize) {
         static QString startDir = QStandardPaths::writableLocation(QStandardPaths::FontsLocation);
-        QString fName = QFileDialog::getOpenFileName(this, tr("Pick a font file"), startDir);
-        if (!fName.isEmpty()) {
+//         QString fName = QFileDialog::getOpenFileName(this, tr("Pick a font file"), startDir);
+//         if (!fName.isEmpty())
+        auto fDialog = new QFileDialog(this, tr("Pick a font file"), startDir);
+        auto variant = QVariant(QVariant::UserType);
+        variant.setValue(fDialog);
+        fDialog->setProperty("QFileDialogInstance", variant);
+        fDialog->setProperty("QFileDialogParentClass", metaObject()->className());
+        qWarning() << "\t" << fDialog << fDialog->property("QFileDialogInstance")
+            << fDialog->property("QFileDialogParentClass");
+        if (fDialog->exec() && !fDialog->selectedFiles().isEmpty())
+        {
+            QString fName = fDialog->selectedFiles().at(0);
             QFileInfo fi(fName);
             startDir = fi.absoluteDir().path();
 #ifdef QRAWFONT_FROM_DATA
@@ -664,6 +674,7 @@ void Dialog::getFontFromFile()
                 return;
             }
         }
+        delete fDialog;
     }
     if (rawFont.isValid()) {
         rawFont.setPixelSize(pointSize);
