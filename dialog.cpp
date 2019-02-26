@@ -651,10 +651,8 @@ void Dialog::getFontFromFile()
         auto fDialog = new QFileDialog(this, tr("Pick a font file"), startDir);
         auto variant = QVariant(QVariant::UserType);
         variant.setValue(fDialog);
-        fDialog->setProperty("QFileDialogInstance", variant);
-        fDialog->setProperty("QFileDialogParentClass", metaObject()->className());
-        qWarning() << "\t" << fDialog << fDialog->property("QFileDialogInstance")
-            << fDialog->property("QFileDialogParentClass");
+        setProperty("QFileDialogInstance", variant);
+        qWarning() << "\t" << fDialog << property("QFileDialogInstance");
         if (fDialog->exec() && !fDialog->selectedFiles().isEmpty())
         {
             QString fName = fDialog->selectedFiles().at(0);
