@@ -50,6 +50,8 @@
 #include "dialog.h"
 #include "timing.h"
 
+// #define QRAWFONT_FROM_DATA
+
 #define MESSAGE \
     Dialog::tr("<p>Message boxes have a caption, a text, " \
                "and any number of buttons, each with standard or custom texts." \
@@ -670,6 +672,11 @@ void Dialog::getFontFromFile()
             if (rFont.isValid()) {
                 qWarning() << "Read font from" << fName;
                 rawFont = rFont;
+#ifdef QRAWFONT_FROM_DATA
+                qWarning() << "addApplicationFontFromData() returns:" << QFontDatabase::addApplicationFontFromData(fontData);
+#else
+                qWarning() << "addApplicationFont() returns:" << QFontDatabase::addApplicationFont(fName);
+#endif
             } else {
                 qWarning() << fName << "doesn't give a valid font";
                 return;
