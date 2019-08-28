@@ -39,6 +39,7 @@
 ****************************************************************************/
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QTranslator>
 #include <QLocale>
 #include <QLibraryInfo>
@@ -135,10 +136,20 @@ void doSomethingWithQFont(QFont &fnt)
 
 #include "timing.c"
 
+bool doBenchmark = false;
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     QSettings::setDefaultFormat(QSettings::IniFormat);
+
+    QCommandLineParser parser;
+    parser.addHelpOption();
+    QCommandLineOption benchmark(QStringLiteral("benchmark"), QStringLiteral("measure timings for certain operations"));
+    parser.addOption(benchmark);
+    parser.process(app);
+
+    doBenchmark = parser.isSet(benchmark);
 
 #ifndef QT_NO_TRANSLATION
     QString translatorFileName = QLatin1String("qt_");
@@ -165,29 +176,32 @@ int main(int argc, char *argv[])
 //         << qstringCompareToList(compareTo, blackStyles.list(), true);
 //     qDebug() << "QFontStyleSet:" << blackStyles.contains(pattern, false) << " vs "
 //         << blackStyles.contains(compareTo, true);
-    const int N = 1000000;
-    init_HRTime();
-    bool found = true, exact = true;
-    HRTime_tic();
-    for( int i = 0 ; i < N && found; ++i ){
-        pattern = blackStyleList[i % blackStyleList.size()];
-    }
-    double overhead = HRTime_toc();
-    for( int j = 0 ; j < 2 ; ++j ){
-        HRTime_tic();
-        for( int i = 0 ; i < N && found; ++i ){
-            pattern = blackStyleList[i % blackStyleList.size()];
-            found =  qstringCompareToList(pattern, blackStyleList, exact) && qstringCompareToList(compareTo, blackStyleList, exact);
-        }
-        qInfo() << N << " times qstringCompareToList in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
-        HRTime_tic();
-        for( int i = 0 ; i < N && found; ++i ){
-            pattern = blackStyleList[i % blackStyleList.size()];
-            found = blackStyles.contains(pattern, exact) && blackStyles.contains(compareTo, exact);
-        }
-        qInfo() << N << " times QFontStyleSet::contains in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
 
-        exact = false;
+    if (doBenchmark) {
+        const int N = 1000000;
+        init_HRTime();
+        bool found = true, exact = true;
+        HRTime_tic();
+        for( int i = 0 ; i < N && found; ++i ){
+            pattern = blackStyleList[i % blackStyleList.size()];
+        }
+        double overhead = HRTime_toc();
+        for( int j = 0 ; j < 2 ; ++j ){
+            HRTime_tic();
+            for( int i = 0 ; i < N && found; ++i ){
+                pattern = blackStyleList[i % blackStyleList.size()];
+                found =  qstringCompareToList(pattern, blackStyleList, exact) && qstringCompareToList(compareTo, blackStyleList, exact);
+            }
+            qInfo() << N << " times qstringCompareToList in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
+            HRTime_tic();
+            for( int i = 0 ; i < N && found; ++i ){
+                pattern = blackStyleList[i % blackStyleList.size()];
+                found = blackStyles.contains(pattern, exact) && blackStyles.contains(compareTo, exact);
+            }
+            qInfo() << N << " times QFontStyleSet::contains in " << HRTime_toc() - overhead << " seconds; exact=" << exact;
+
+            exact = false;
+        }
     }
 
     // to match the default Info.plist that qmake creates:

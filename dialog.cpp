@@ -97,6 +97,12 @@ QFont clone(const QFont &f)
 
 void benchmarkCloning(QFont &font)
 {
+    extern bool doBenchmark;
+
+    if (!doBenchmark) {
+        return;
+    }
+
     int N = 1000000, fact = 1;
     int i;
     extern void doSomethingWithQFont(QFont&);
@@ -126,7 +132,7 @@ void benchmarkCloning(QFont &font)
         doSomethingWithQFont(tmp);
     }
     elapsed = HRTime_toc();
-    qWarning() << N << "times `QFont tmp(font)`:" << elapsed - overhead << "seconds";
+    qWarning() << N << "times `QFont tmp(clone(font))`:" << elapsed - overhead << "seconds";
 }
 
 class DialogOptionsWidget : public QGroupBox
@@ -182,6 +188,8 @@ Dialog::Dialog(QWidget *parent)
     : QDialog(parent)
 {
     setAttribute(Qt::WA_QuitOnClose, true);
+    // will be toggled by fontDetails()
+    setWindowModified(true);
 
     qApp->setStyleSheet("QLabel{ background: white }");
     int frameStyle = QFrame::Sunken | QFrame::Panel;
@@ -461,10 +469,13 @@ QFont Dialog::fontDetails(QFont &font, QTextStream &sink)
 {
     QFont ret = font;
     QFontInfo fi(font);
+    setWindowModified(!isWindowModified());
+    setWindowFilePath(QString());
+    setWindowTitle(fi.family() + " [*]");
     sink << "QFontInfo for " << font.toString() << (fi.exactMatch()? " (exact match):" : " :") << endl;
     sink << "\tfamily " << fi.family() << " styleName=" << fi.styleName() << ", style=" << styleString[fi.style()]
         << (fi.bold()? " bold " : " ")
-        << fi.pointSizeF() << "pt; weight " << fi.weight() << "\n\t"
+        << fi.pointSizeF() << "pt; " << fi.pixelSize() << "px; weight " << fi.weight() << "\n\t"
         << "stretch: " << font.stretch() << "; l.spacing:" << font.letterSpacing()
         << " type: " << font.letterSpacingType() << endl;
     sink << "\tstyleHint: " << styleHintString[fi.styleHint()] << (fi.fixedPitch()? ", fixed pitch" : "") << endl;
@@ -497,6 +508,28 @@ QFont Dialog::fontDetails(QFont &font, FILE *fp)
 {
     QTextStream sink(fp);
     return fontDetails(font, sink);
+}
+
+QFont Dialog::fontDetails(QRawFont &font, QTextStream &sink)
+{
+    QFont ret;
+    setWindowModified(!isWindowModified());
+    setWindowTitle(font.familyName() + " [*]");
+    sink << "QRawFontInfo:" << endl;
+    sink << "\tfamily " << font.familyName() << " styleName=" << font.styleName() << ", style=" << styleString[font.style()]
+        << " " << font.pixelSize() << "px; weight " << font.weight() << "\n\t" << endl;
+    QFontDatabase db;
+    if (!font.styleName().isEmpty()) {
+        ret = db.font(font.familyName(), font.styleName(), font.pixelSize());
+        sink << "\tQFontDatabase::font(" << font.familyName() << "," << font.styleName() << "," << font.pixelSize() << ") = "
+            << ret.toString() << endl;
+    }
+    sink << "QRawFontMetrics:" << endl;
+    sink << "\tleading, ascent, descent: " << font.leading() << "," << font.ascent() << "," << font.descent()
+        << "; average width=" << font.averageCharWidth() << endl;
+    sink << "\tcapHeight, x-height, max.Charwidth: " << font.capHeight() << "," << font.xHeight() << "," << font.maxCharWidth()
+        << "; natural line spacing: " << font.leading() << endl;
+    return ret;
 }
 
 void Dialog::setFont(QFont &fnt)
@@ -632,7 +665,6 @@ void Dialog::getFontFromFamily()
                                          tr("Font Family:"), QLineEdit::Normal,
                                          famFont.family(), &ok);
     if (ok && !text.isEmpty()) {
-        qWarning() << "Substitutes for" << text << ":" << QFont::substitutes(text);
 //         famFont.setStyleStrategy(QFont::ForceOutline);
         famFont.setFamily(text);
         fontFamilyPreview->setFont(famFont);
@@ -640,6 +672,7 @@ void Dialog::getFontFromFamily()
             + QLatin1String(" = ") + QFontInfo(famFont).family());
         fontFamilyPreview->update();
         setPaintFont(famFont);
+        fontDetails(famFont, stdout);
     }
 }
 
@@ -681,6 +714,7 @@ void Dialog::getFontFromFile()
                 qWarning() << fName << "doesn't give a valid font";
                 return;
             }
+            setWindowFilePath(fName);
         }
         delete fDialog;
     }
@@ -690,6 +724,8 @@ void Dialog::getFontFromFile()
             .arg(rawFont.familyName()).arg(rawFont.styleName()).arg(pointSize);
         qWarning() << "Raw font:" << label;
         setPaintFont(rawFont, label);
+        QTextStream sink(stdout);
+        fontDetails(rawFont, sink);
     }
 }
 

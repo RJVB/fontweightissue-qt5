@@ -92,6 +92,7 @@ private:
     QFont fontDetails(QFont &font, QTextStream &sink);
     QString fontDetails(QFont &font);
     QFont fontDetails(QFont &font, FILE *fp);
+    QFont fontDetails(QRawFont &font, QTextStream &sink);
 
     QRawFont rawFont;
     QSpinBox *rawFontSize, *fontStretch;
