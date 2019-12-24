@@ -4,3 +4,5 @@ Two buttons allow to call up a font selection dialog: the upper button preselect
 
 After selecting a font, the display is updated and the selection is saved in the application settings, either as a native QFont or else using the string representation that is also shown to the right of the upper button.
 This setting is read during application startup, which allows to test whether the selected font is restored correctly from a settings file.
+
+The patches subdirectory hold my font weight improvement changes for various Qt versions.

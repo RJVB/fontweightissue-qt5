@@ -5,6 +5,8 @@
 *.o
 *.pro.user
 moc_*
-build
+build*
 *.app
 Makefile
+*.orig
+fontweightissue
