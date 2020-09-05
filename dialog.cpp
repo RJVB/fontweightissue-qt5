@@ -49,17 +49,9 @@
 
 #include "dialog.h"
 #include "timing.h"
+#include "kfontrequester.h"
 
 // #define QRAWFONT_FROM_DATA
-
-#define MESSAGE \
-    Dialog::tr("<p>Message boxes have a caption, a text, " \
-               "and any number of buttons, each with standard or custom texts." \
-               "<p>Click a button to close the message box. Pressing the Esc button " \
-               "will activate the detected escape button (if any).")
-#define MESSAGE_DETAILS \
-    Dialog::tr("If a message box has detailed text, the user can reveal it " \
-               "by pressing the Show Details... button.")
 
 QFont stripStyleName(QFont &f, QFontDatabase &db)
 {
@@ -346,6 +338,14 @@ Dialog::Dialog(QWidget *parent)
 #endif
     layout->addWidget(fontDialogOptionsWidget, 9, 0, 1 ,2);
 
+    fontRequester = new KFontRequester(this);
+    fontRequester->setToolTip(tr("This is a KF5 KFontRequester widget"));
+    fontRequester->setAlwaysTriggerSignal(false);
+    fontRequester->setFont(font);
+    fontRequester->setSampleText(fontRequester->font().key());
+    connect(fontRequester, SIGNAL(fontSelected(const QFont&)), this, SLOT(setFont(const QFont&)));
+    layout->addWidget(fontRequester, 10, 0, 1 ,2);
+
     setLayout(layout);
 
     setWindowTitle(tr("Font Selection"));
@@ -532,7 +532,7 @@ QFont Dialog::fontDetails(QRawFont &font, QTextStream &sink)
     return ret;
 }
 
-void Dialog::setFont(QFont &fnt)
+void Dialog::setFont(const QFont &fnt)
 {
     font = fnt;
     fontLabel->setText(font.key());
@@ -569,6 +569,11 @@ void Dialog::setFont(QFont &fnt)
     fontLabel->update();
     setPaintFont(font);
     fontStretch->setValue(QFont::Unstretched);
+
+    if (sender() != fontRequester) {
+        fontRequester->setFont(font);
+    }
+    fontRequester->setSampleText(fontRequester->font().key());
 }
 
 void Dialog::setFont()
@@ -639,6 +644,9 @@ void Dialog::setFontFromSpecs()
         fontLabel2->update();
         setPaintFont(font2);
         fontStretch->setValue(QFont::Unstretched);
+
+        fontRequester->setFont(font2);
+        fontRequester->setSampleText(fontRequester->font().key());
     }
 }
 
@@ -735,23 +743,27 @@ void Dialog::setFontStyleName()
     QString text = QInputDialog::getText(this, tr("QFont::styleName()"),
                                          tr("Font styleName:"), QLineEdit::Normal,
                                          font.styleName(), &ok);
-    if (ok) {
-        QFont fnt(font);
+    QFont fnt(font);
+    QFontDatabase fdb;
+    if (!ok || text.isEmpty()) {
+        fnt = stripStyleName(font, fdb);
+    } else {
         fnt.setStyleName(text);
-        styledFontPreview->setFont(fnt);
-        styledFontPreview->setText(fnt.key());
-        fnt = fontDetails(fnt, stdout);
-        styledFontPreview->setToolTip(tr(STYLEDFNTPREVIEWTT).arg(fnt.toString()));
-        QFont boldFnt(fnt);
-        boldFnt.setStyleName(QString());
-        boldFnt.setBold(true);
-        qWarning() << "style name emptied, font boldened:" << boldFnt.toString();
-        QFontDatabase db;
-        QFont stripped = stripStyleName(fnt, db);
-        qWarning() << "stripStyleName() gives" << stripped.toString();
-        stripped.setBold(true);
-        qWarning() << "\tboldened:" << stripped.toString();
     }
+    styledFontPreview->setFont(fnt);
+    styledFontPreview->setText(fnt.key());
+    fontRequester->setFont(fnt);
+    fontRequester->setSampleText(fontRequester->font().key());
+    fnt = fontDetails(fnt, stdout);
+    styledFontPreview->setToolTip(tr(STYLEDFNTPREVIEWTT).arg(fnt.toString()));
+    QFont boldFnt(fnt);
+    boldFnt.setStyleName(QString());
+    boldFnt.setBold(true);
+    qWarning() << "style name emptied, font boldened:" << boldFnt.toString();
+    QFont stripped = stripStyleName(fnt, fdb);
+    qWarning() << "stripStyleName() gives" << stripped.toString();
+    stripped.setBold(true);
+    qWarning() << "\tboldened:" << stripped.toString();
 }
 
 void Dialog::setPaintFont(const QRawFont &rFont, const QString &text)

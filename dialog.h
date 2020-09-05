@@ -57,6 +57,7 @@ QT_END_NAMESPACE
 
 class DialogOptionsWidget;
 class QTextStream;
+class KFontRequester;
 
 class Dialog : public QDialog
 {
@@ -78,9 +79,10 @@ private slots:
     void setFontStyleName();
     void applyStretch();
 
-private:
-    void setFont(QFont &fnt);
+private slots:
+    void setFont(const QFont &fnt);
 
+private:
     QLabel *fontLabel, *fontLabel2, *fontPreview, *fontFamilyPreview, *fontStyleName;
     QLabel *clonedFontPreview, *clonedBoldFontPreview, *styledFontPreview, *stretchedFontPreview;
     QFont font, famFont;
@@ -98,6 +100,8 @@ private:
     QSpinBox *rawFontSize, *fontStretch;
     QFrame *paintLabel;
     QList<QGlyphRun> glyphRuns;
+
+    KFontRequester *fontRequester;
 };
 
 #endif

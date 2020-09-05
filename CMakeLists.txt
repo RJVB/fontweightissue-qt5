@@ -33,9 +33,15 @@ if (NOT Qt5::CorePrivate)
     )
 endif()
 
+include_directories(kwidgetsaddons)
+
 set(FWI_SRCS
     dialog.cpp
-    main.cpp)
+    main.cpp
+    kwidgetsaddons/kfontchooser.cpp
+    kwidgetsaddons/kfontchooserdialog.cpp
+    kwidgetsaddons/kfontrequester.cpp
+    kwidgetsaddons/fonthelpers.cpp)
 add_executable(fontweightissue WIN32 MACOSX_BUNDLE
   ${FWI_SRCS})
 
