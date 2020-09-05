@@ -79,15 +79,14 @@ QFont KFontChooserDialog::font() const
 // fonts. For more details see:
 // https://bugreports.qt.io/browse/QTBUG-63792
 // https://bugs.kde.org/show_bug.cgi?id=378523
-static void stripRegularStyleName(QFont &font)
+// RJVB: Always strip the styleName. It's redundant at best and always causes
+// software transformations as mentioned above. A synthetic bold version of
+// a semi-bold face is going to be heavier than the actual bold face. Code
+// shouldn't have to bother with stripping the attribute itself (and can
+// easily obtain it via QFontInfo::styleName()).
+static void stripStyleName(QFont &font)
 {
-    if (font.weight() == QFont::Normal
-        && (font.styleName() == QLatin1String("Regular")
-            || font.styleName() == QLatin1String("Normal")
-            || font.styleName() == QLatin1String("Book")
-            || font.styleName() == QLatin1String("Roman"))) {
-        font.setStyleName(QString());
-    }
+    font.setStyleName(QString());
 }
 
 // static
@@ -102,7 +101,7 @@ int KFontChooserDialog::getFontDiff(QFont &theFont, KFontChooser::FontDiffFlags 
     if (result == Accepted) {
         theFont = dlg.d->chooser->font();
         diffFlags = dlg.d->chooser->fontDiffFlags();
-        stripRegularStyleName(theFont);
+        stripStyleName(theFont);
     }
     return result;
 }
@@ -117,7 +116,7 @@ int KFontChooserDialog::getFont(QFont &theFont, const KFontChooser::DisplayFlags
     const int result = dlg.exec();
     if (result == Accepted) {
         theFont = dlg.d->chooser->font();
-        stripRegularStyleName(theFont);
+        stripStyleName(theFont);
     }
     return result;
 }

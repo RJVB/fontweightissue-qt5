@@ -746,7 +746,10 @@ void Dialog::setFontStyleName()
     QFont fnt(font);
     QFontDatabase fdb;
     if (!ok || text.isEmpty()) {
+        fnt.setStyleName(QString());
+        qWarning() << "Stripping via setStyleName(QString());" << font << "->" << fnt;
         fnt = stripStyleName(font, fdb);
+        qWarning() << "\tvia stripStyleName():" << fnt;
     } else {
         fnt.setStyleName(text);
     }
