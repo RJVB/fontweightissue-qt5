@@ -49,7 +49,7 @@
 
 #include "dialog.h"
 #include "timing.h"
-#include "kfontrequester.h"
+#include "kwidgetsaddons/kfontrequester.h"
 
 // #define QRAWFONT_FROM_DATA
 

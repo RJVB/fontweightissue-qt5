@@ -3,9 +3,17 @@ CONFIG += release c++11 rpath
 QMAKE_CXXFLAGS_RELEASE -= -pipe -O2
 QMAKE_CXXFLAGS_RELEASE += -g -O3 -march=native
 
-HEADERS       = dialog.h timing.c timing.h
+HEADERS       = dialog.h timing.c timing.h \
+                kwidgetsaddons/fonthelpers_p.h \
+                kwidgetsaddons/kfontchooser.h \
+                kwidgetsaddons/kfontchooserdialog.h \
+                kwidgetsaddons/kfontrequester.h
 SOURCES       = dialog.cpp \
-                main.cpp
+                main.cpp \
+                kwidgetsaddons/kfontchooser.cpp \
+                kwidgetsaddons/kfontchooserdialog.cpp \
+                kwidgetsaddons/kfontrequester.cpp \
+                kwidgetsaddons/fonthelpers.cpp
 
 # install
 target.path = $$[QT_INSTALL_EXAMPLES]/widgets/dialogs/fontweightissue
